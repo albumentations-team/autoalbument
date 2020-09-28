@@ -1,0 +1,28 @@
+model:
+  cls_factor: 0.1
+  gp_factor: 10
+  temperature: 0.05
+  num_sub_policies: 150
+  num_chunks: 8
+  operation_count: 4
+  num_classes: <REPLACE_ME>
+  architecture: resnet18
+  pretrained: False
+
+data:
+  dataset_file: dataset.py
+  input_dtype: uint8
+  preprocessing:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+  dataloader:
+    batch_size: 128
+    shuffle: True
+    num_workers: 4
+
+optim:
+  epochs:  20
+  main_lr: 1e-3
+  policy_lr: 1e-3
+
+device: cuda

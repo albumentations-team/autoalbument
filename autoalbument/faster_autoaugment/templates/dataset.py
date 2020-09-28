@@ -1,0 +1,29 @@
+import torch.utils.data
+
+
+class SearchDataset(torch.utils.data.Dataset):
+    def __init__(self, transform=None):
+        self.transform = transform
+        # Implement additional initialization logic if needed
+
+    def __len__(self):
+        # Replace `...` with the actual implementation
+        ...
+
+    def __getitem__(self, index):
+        # Implement logic to get an image and its label using the received index.
+        #
+        # `image` should be a NumPy array with the shape [height, width, num_channels].
+        # If an image contains three color channels it should use an RGB color scheme.
+        #
+        # `label` should be an integer in the range [0, model.num_classes - 1] where `model.num_classes`
+        # is a value set in the `search.yaml` file.
+
+        image = ...
+        label = ...
+
+        if self.transform is not None:
+            transformed = self.transform(image=image)
+            image = transformed["image"]
+
+        return image, label
