@@ -26,3 +26,7 @@ optim:
   policy_lr: 1e-3
 
 device: cuda
+
+hydra:
+  run:
+    dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
