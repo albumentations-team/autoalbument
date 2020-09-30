@@ -31,7 +31,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
     parser_create = subparsers.add_parser(
         "create",
-        help="create AutoAlbument experiment files",
+        help="Create AutoAlbument experiment files",
     )
     parser_create.set_defaults(func=create)
     parser_create.add_argument(

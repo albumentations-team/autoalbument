@@ -1,6 +1,5 @@
 import random
 from copy import deepcopy
-from typing import Optional
 
 import albumentations as A
 import torch
@@ -8,7 +7,7 @@ from albumentations.core.composition import Compose, OneOf
 from albumentations.pytorch import ToTensorV2
 from torch import Tensor, nn
 
-from .operations import (
+from autoalbument.faster_autoaugment.operations import (
     CutoutFixedNumerOfHoles,
     CutoutFixedSize,
     HorizontalFlip,
@@ -47,17 +46,12 @@ class SubPolicyStage(nn.Module):
         probabilities = [op.probability.item() for op in self.operations]
         true_probabilities = [w * p for (w, p) in zip(weights, probabilities)]
         assert sum(true_probabilities) <= 1.0
-
         transforms = []
         p_sum = 0
         for operation, p in zip(self.operations, true_probabilities):
-            if p <= 0:
-                continue
             transforms.append(operation.create_transform(input_dtype, p))
             p_sum += p
-
         transforms.append(A.NoOp(p=1.0 - p_sum))
-
         return OneOf(transforms, p=1)
 
 
@@ -75,8 +69,8 @@ class SubPolicy(nn.Module):
             input = stage(input)
         return input
 
-    def create_transform(self, input_dtype):
-        return A.Sequential([stage.create_transform(input_dtype) for stage in self.stages], p=1 / 150)
+    def create_transform(self, input_dtype, p):
+        return A.Sequential([stage.create_transform(input_dtype) for stage in self.stages], p=p)
 
 
 class Policy(nn.Module):
@@ -84,11 +78,11 @@ class Policy(nn.Module):
         self,
         operations: nn.ModuleList,
         num_sub_policies: int,
-        temperature: float = 0.05,
-        operation_count: int = 2,
-        num_chunks: int = 4,
-        mean: Optional[Tensor] = None,
-        std: Optional[Tensor] = None,
+        temperature: float,
+        operation_count: int,
+        num_chunks: int,
+        mean: Tensor,
+        std: Tensor,
     ):
         super(Policy, self).__init__()
         self.sub_policies = nn.ModuleList(
@@ -98,28 +92,21 @@ class Policy(nn.Module):
         self.temperature = temperature
         self.operation_count = operation_count
         self.num_chunks = num_chunks
-        if mean is None:
-            self._mean, self._std = None, None
-        else:
-            self.register_buffer("_mean", mean)
-            self.register_buffer("_std", std)
+        self.register_buffer("_mean", mean)
+        self.register_buffer("_std", std)
 
         for p in self.parameters():
             nn.init.uniform_(p, 0, 1)
 
     def forward(self, input: Tensor) -> Tensor:
         # [0, 1] -> [-1, 1]
-
         if self.num_chunks > 1:
             out = [self._forward(inp) for inp in input.chunk(self.num_chunks)]
             x = torch.cat(out, dim=0)
         else:
             x = self._forward(input)
 
-        if self._mean is None:
-            return x
-        else:
-            return self.normalize_(x)
+        return self.normalize_(x)
 
     def _forward(self, input: Tensor) -> Tensor:
         index = random.randrange(self.num_sub_policies)
@@ -135,7 +122,6 @@ class Policy(nn.Module):
 
     @staticmethod
     def dda_operations(temperature=0.05):
-
         return [
             ShiftRGB(shift_r=True, temperature=temperature),
             ShiftRGB(shift_g=True, temperature=temperature),
@@ -159,13 +145,9 @@ class Policy(nn.Module):
         temperature: float,
         operation_count: int,
         num_chunks: int,
-        mean: Optional[torch.Tensor] = None,
-        std: Optional[torch.Tensor] = None,
+        mean: torch.Tensor,
+        std: torch.Tensor,
     ):
-        if mean is None or std is None:
-            mean = torch.ones(3) * 0.5
-            std = torch.ones(3) * 0.5
-
         return Policy(
             nn.ModuleList(Policy.dda_operations(temperature)),
             num_sub_policies,
@@ -179,7 +161,7 @@ class Policy(nn.Module):
     def create_transform(self, input_dtype="float32"):
         return Compose(
             [
-                OneOf([sp.create_transform(input_dtype) for sp in self.sub_policies], p=1),
+                OneOf([sp.create_transform(input_dtype, p=1 / len(self.sub_policies)) for sp in self.sub_policies], p=1),
                 A.Normalize(mean=self._mean.tolist(), std=self._std.tolist()),
                 ToTensorV2(),
             ]

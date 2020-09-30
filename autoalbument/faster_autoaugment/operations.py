@@ -7,7 +7,7 @@ from torch import nn
 from torch.autograd import Function
 from torch.distributions import RelaxedBernoulli
 
-from .albumentations_pytorch import functional as F
+from autoalbument.faster_autoaugment.albumentations_pytorch import functional as F
 
 
 class _STE(Function):
