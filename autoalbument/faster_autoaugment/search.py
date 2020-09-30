@@ -12,6 +12,7 @@ from torch.nn import functional as F
 from torch.optim import Adam
 from tqdm import tqdm
 
+from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE
 from autoalbument.utils.hydra import get_dataset_filepath
 from autoalbument.faster_autoaugment.policy import Policy
 
@@ -20,7 +21,7 @@ torch.backends.cudnn.benchmark = True
 
 class Discriminator(nn.Module):
     def __init__(self, base_model, num_classes):
-        super(Discriminator, self).__init__()
+        super().__init__()
         self.base_model = base_model
         num_features = self.base_model.feature_info[-1]["num_chs"]
         self.classifier = nn.Linear(num_features, num_classes)
@@ -85,7 +86,7 @@ class FasterAutoAugment:
                 A.Normalize(
                     mean=preprocessing_cfg.mean,
                     std=preprocessing_cfg.std,
-                    max_pixel_value=255.0 if input_dtype == "uint8" else 1.0,
+                    max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype],
                 ),
                 ToTensorV2(),
             ]

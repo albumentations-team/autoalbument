@@ -21,6 +21,7 @@ from autoalbument.faster_autoaugment.operations import (
     Solarize,
     VerticalFlip,
 )
+from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE
 
 
 class SubPolicyStage(nn.Module):
@@ -29,7 +30,7 @@ class SubPolicyStage(nn.Module):
         operations: nn.ModuleList,
         temperature: float,
     ):
-        super(SubPolicyStage, self).__init__()
+        super().__init__()
         self.operations = operations
         self._weights = nn.Parameter(torch.ones(len(self.operations)))
         self.temperature = temperature
@@ -61,7 +62,7 @@ class SubPolicy(nn.Module):
         sub_policy_stage: SubPolicyStage,
         operation_count: int,
     ):
-        super(SubPolicy, self).__init__()
+        super().__init__()
         self.stages = nn.ModuleList([deepcopy(sub_policy_stage) for _ in range(operation_count)])
 
     def forward(self, input: Tensor) -> Tensor:
@@ -84,7 +85,7 @@ class Policy(nn.Module):
         mean: Tensor,
         std: Tensor,
     ):
-        super(Policy, self).__init__()
+        super().__init__()
         self.sub_policies = nn.ModuleList(
             [SubPolicy(SubPolicyStage(operations, temperature), operation_count) for _ in range(num_sub_policies)]
         )
@@ -159,10 +160,11 @@ class Policy(nn.Module):
         )
 
     def create_transform(self, input_dtype="float32"):
+        sub_policy_p = 1 / len(self.sub_policies)
         return Compose(
             [
-                OneOf([sp.create_transform(input_dtype, p=1 / len(self.sub_policies)) for sp in self.sub_policies], p=1),
-                A.Normalize(mean=self._mean.tolist(), std=self._std.tolist()),
+                OneOf([sp.create_transform(input_dtype, p=sub_policy_p) for sp in self.sub_policies], p=1),
+                A.Normalize(mean=self._mean.tolist(), std=self._std.tolist(), max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype]),
                 ToTensorV2(),
             ]
         )
