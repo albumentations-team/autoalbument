@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 from omegaconf import MISSING
 
@@ -21,8 +21,8 @@ class DataloaderConfig:
 class DataConfig:
     preprocessing: PreprocessingConfig
     dataloader: DataloaderConfig
-    dataset_file: str = 'dataset.py'
-    input_dtype: str = 'uint8'
+    dataset_file: str = "dataset.py"
+    input_dtype: str = "uint8"
 
 
 @dataclass
@@ -35,7 +35,7 @@ class OptimConfig:
 @dataclass
 class ModelConfig:
     num_classes: int = MISSING
-    architecture: str = 'resnet18'
+    architecture: str = "resnet18"
     pretrained: bool = False
     cls_factor: float = 0.1
     gp_factor: float = 10
@@ -50,4 +50,7 @@ class FasterAutoAugmentSearchConfig:
     model: ModelConfig
     data: DataConfig
     optim: OptimConfig
-    device: str = 'cuda'
+    device: str = "cuda"
+    cudnn_benchmark: bool = True
+    save_checkpoints: bool = False
+    checkpoint_path: Optional[str] = None

@@ -63,7 +63,7 @@ data:
 
   # Preprocessing values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Note that regardless of `input_dtype`, the preprocessing function will always receive a `float32` input with values
-  # in the range [0.0, 1.0], so you should define `mean` and `std` `values accordingly. ImageNet normalization is used
+  # in the range [0.0, 1.0], so you should define `mean` and `std` values accordingly. ImageNet normalization is used
   # by default.
   preprocessing:
     mean: [0.485, 0.456, 0.406]
@@ -89,6 +89,18 @@ optim:
 # Device that will keep PyTorch Tensors and which will be used for training. Please refer to the PyTorch documentation
 # for more information -  https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device.
 device: cuda
+
+# Value for torch.backends.cudnn.benchmark
+# https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
+cudnn_benchmark: True
+
+# If set to `True` AutoAlbument will save a checkpoint that contains states of models and optimizers at the end of each
+# epoch. Checkpoints will be saved to the directory `<working directory>/checkpoints`.
+save_checkpoints: False
+
+# Path to a PyTorch checkpoint that contains saved states of models and optimizers. The value should be an absolute path
+# to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
+checkpoint_path: null
 
 hydra:
   run:

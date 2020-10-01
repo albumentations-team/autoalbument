@@ -164,7 +164,11 @@ class Policy(nn.Module):
         return Compose(
             [
                 OneOf([sp.create_transform(input_dtype, p=sub_policy_p) for sp in self.sub_policies], p=1),
-                A.Normalize(mean=self._mean.tolist(), std=self._std.tolist(), max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype]),
+                A.Normalize(
+                    mean=self._mean.tolist(),
+                    std=self._std.tolist(),
+                    max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype],
+                ),
                 ToTensorV2(),
             ]
         )

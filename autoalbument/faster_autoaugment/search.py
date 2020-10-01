@@ -1,4 +1,5 @@
 import importlib.util
+import logging
 from collections import defaultdict
 from pathlib import Path
 from typing import Tuple
@@ -13,10 +14,11 @@ from torch.optim import Adam
 from tqdm import tqdm
 
 from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE
+from autoalbument.utils.files import symlink
 from autoalbument.utils.hydra import get_dataset_filepath
 from autoalbument.faster_autoaugment.policy import Policy
 
-torch.backends.cudnn.benchmark = True
+log = logging.getLogger(__name__)
 
 
 class Discriminator(nn.Module):
@@ -62,17 +64,31 @@ def get_dataset_cls(dataset_file, dataset_cls_name="SearchDataset"):
 class FasterAutoAugment:
     def __init__(self, cfg):
         self.cfg = cfg
+        torch.backends.cudnn.benchmark = self.cfg.cudnn_benchmark
+        self.start_epoch = 1
         self.dataloader = self.create_dataloader()
         self.models = self.create_models()
         self.optimizers = self.create_optimizers()
         self.loss_tracker = self.create_loss_tracker()
-        self.directories = self.create_directories()
+        self.paths = self.create_directories()
         self.epoch = None
+        if self.cfg.checkpoint_path:
+            self.load_checkpoint()
 
     def create_directories(self):
         policy_dir = Path.cwd() / "policy"
         policy_dir.mkdir(exist_ok=True)
-        return {"policy": policy_dir}
+        checkpoints_dir = Path.cwd() / "checkpoints"
+        checkpoints_dir.mkdir(exist_ok=True)
+        return {
+            "policy_dir": policy_dir,
+            "checkpoints_dir": checkpoints_dir,
+            "latest_policy_path": policy_dir / "latest.json",
+            "latest_checkpoint_path": checkpoints_dir / "latest.pth",
+        }
+
+    def get_latest_policy_save_path(self):
+        return
 
     def create_loss_tracker(self):
         return MetricTracker()
@@ -180,7 +196,11 @@ class FasterAutoAugment:
         a_input, a_target = input[:b], target[:b]
         n_input, n_target = input[b:], target[b:]
         loss, d_loss, a_loss = self.wgan_loss(n_input, n_target, a_input, a_target)
-        return dict(loss=loss, d_loss=d_loss, a_loss=a_loss)
+        return {
+            "loss": loss,
+            "d_loss": d_loss,
+            "a_loss": a_loss,
+        }
 
     def train_epoch(self):
         self.loss_tracker.reset()
@@ -194,13 +214,76 @@ class FasterAutoAugment:
             pbar.update()
         pbar.close()
 
+    def save_policy(self):
+        transform = self.models["policy"].create_transform(input_dtype=self.cfg.data.input_dtype)
+        policy_save_path = self.paths["policy_dir"] / f"epoch_{self.epoch}.json"
+        A.save(transform, str(policy_save_path))
+        symlink(policy_save_path, self.paths["latest_policy_path"])
+        log.info(
+            f"Policy is saved to {policy_save_path}. "
+            f"{self.paths['latest_policy_path']} now also points to this policy file."
+        )
+
+    def save_checkpoint(self):
+        checkpoint = {
+            "epoch": self.epoch,
+            "models": {k: v.state_dict() for k, v in self.models.items()},
+            "optimizers": {k: v.state_dict() for k, v in self.optimizers.items()},
+        }
+        checkpoint_save_path = self.paths["checkpoints_dir"] / f"epoch_{self.epoch}.pth"
+        torch.save(checkpoint, checkpoint_save_path)
+        symlink(checkpoint_save_path, self.paths["latest_checkpoint_path"])
+        log.info(
+            f"Checkpoint is saved to {checkpoint_save_path}. "
+            f"{self.paths['latest_checkpoint_path']} now also points to this checkpoint file."
+        )
+
+    def load_checkpoint(self):
+        checkpoint_path = self.cfg.checkpoint_path
+        log.info(f"Loading checkpoint {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path, map_location=self.cfg.device)
+        for name, model in self.models.items():
+            model.load_state_dict(checkpoint["models"][name])
+        for name, optimizer in self.optimizers.items():
+            optimizer.load_state_dict(checkpoint["optimizers"][name])
+        self.start_epoch = checkpoint["epoch"] + 1
+
     def save(self):
-        t = self.models["policy"].create_transform(input_dtype=self.cfg.data.input_dtype)
-        policy_save_path = self.directories["policy"] / f"epoch_{self.epoch}.json"
-        A.save(t, str(policy_save_path))
+        self.save_policy()
+        if self.cfg.save_checkpoints:
+            self.save_checkpoint()
+
+    def get_search_summary(self):
+        summary = [
+            f"\n\nSearch is finished.\n"
+            f"- Configuration files for policies found at each epoch are located in {self.paths['policy_dir']}."
+        ]
+        if self.cfg.save_checkpoints:
+            summary.append(
+                f"- Checkpoint files for models and optimizers at each epoch are located in "
+                f"{self.paths['checkpoints_dir']}."
+            )
+
+        latest_policy_path = self.paths["latest_policy_path"]
+        load_command = f'transform = A.load("{latest_policy_path}")\n'
+
+        separator = "-" * len(load_command)
+        summary.append(
+            f"\nUse Albumentations to load the found policies and transform images:\n"
+            f"{separator}\n"
+            f"import albumentations as A\n\n"
+            f'transform = A.load("{latest_policy_path}")\n'
+            f"transformed = transform(image=image)\n"
+            f'transformed_image = transformed["image"]\n'
+            f"{separator}\n"
+        )
+
+        return "\n".join(summary)
 
     def search(self):
-        for epoch in range(1, self.cfg.optim.epochs + 1):
+        for epoch in range(self.start_epoch, self.cfg.optim.epochs + 1):
             self.epoch = epoch
             self.train_epoch()
             self.save()
+
+        log.info(self.get_search_summary())
