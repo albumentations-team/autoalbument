@@ -260,16 +260,19 @@ class Cutout(Operation):
     def __init__(self, temperature, value_range=(0.0, 1.0)):
         super().__init__(temperature, value_range=value_range)
         self.register_buffer("saved_image_shape", torch.Tensor([0, 0]).type(torch.int64))
+        self.is_image_shape_saved = False
 
     def _save_image_shape(self, image_shape):
         if not torch.equal(self.saved_image_shape, image_shape):
-            warnings.warn(
-                f"Shape of images in a batch changed between iterations "
-                f"from {self.saved_image_shape} to {image_shape}. "
-                f"This will affect the created Albumentations transform. "
-                f"The transform will use the shape {image_shape} to initialize its parameters",
-                RuntimeWarning,
-            )
+            if self.is_image_shape_saved:
+                warnings.warn(
+                    f"Shape of images in a batch changed between iterations "
+                    f"from {self.saved_image_shape} to {image_shape}. "
+                    f"This will affect the created Albumentations transform. "
+                    f"The transform will use the shape {image_shape} to initialize its parameters",
+                    RuntimeWarning,
+                )
+            self.is_image_shape_saved = True
             self.saved_image_shape = image_shape
 
     def apply_operation(self, input, value):
