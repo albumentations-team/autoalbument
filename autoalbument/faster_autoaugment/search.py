@@ -1,3 +1,4 @@
+import copy
 import importlib.util
 import logging
 from collections import defaultdict
@@ -13,6 +14,7 @@ from torch.nn import functional as F
 from torch.optim import Adam
 from tqdm import tqdm
 
+from autoalbument.faster_autoaugment.metrics import get_average_parameter_change
 from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE
 from autoalbument.utils.files import symlink
 from autoalbument.utils.hydra import get_dataset_filepath
@@ -74,6 +76,10 @@ class FasterAutoAugment:
         self.epoch = None
         if self.cfg.checkpoint_path:
             self.load_checkpoint()
+        self.saved_policy_state_dict = self.get_policy_state_dict()
+
+    def get_policy_state_dict(self):
+        return copy.deepcopy(self.models["policy"].state_dict())
 
     def create_directories(self):
         policy_dir = Path.cwd() / "policy"
@@ -202,6 +208,12 @@ class FasterAutoAugment:
             "a_loss": a_loss,
         }
 
+    def get_progress_bar_description(self, average_parameter_change=None):
+        description = f"Epoch: {self.epoch}. {self.loss_tracker}"
+        if average_parameter_change is not None:
+            description += f". Average Parameter Change: {average_parameter_change:.6f}"
+        return description
+
     def train_epoch(self):
         self.loss_tracker.reset()
         pbar = tqdm(total=len(self.dataloader))
@@ -210,8 +222,14 @@ class FasterAutoAugment:
             target = target.to(self.cfg.device)
             loss_dict = self.train_step(input, target)
             self.loss_tracker.update(loss_dict)
-            pbar.set_description(f"Epoch: {self.epoch}. {self.loss_tracker}")
+            pbar.set_description(self.get_progress_bar_description())
             pbar.update()
+
+        average_parameter_change = get_average_parameter_change(
+            self.saved_policy_state_dict, self.get_policy_state_dict()
+        )
+        self.saved_policy_state_dict = self.get_policy_state_dict()
+        pbar.set_description(self.get_progress_bar_description(average_parameter_change))
         pbar.close()
 
     def save_policy(self):
@@ -247,6 +265,7 @@ class FasterAutoAugment:
         for name, optimizer in self.optimizers.items():
             optimizer.load_state_dict(checkpoint["optimizers"][name])
         self.start_epoch = checkpoint["epoch"] + 1
+        self.saved_policy_state_dict = self.get_policy_state_dict()
 
     def save(self):
         self.save_policy()
