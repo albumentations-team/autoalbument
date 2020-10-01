@@ -122,7 +122,7 @@ class Policy(nn.Module):
         return input.mul_(self._std[:, None, None]).add_(self._mean[:, None, None])
 
     @staticmethod
-    def dda_operations(temperature=0.05):
+    def dda_operations(temperature):
         return [
             ShiftRGB(shift_r=True, temperature=temperature),
             ShiftRGB(shift_g=True, temperature=temperature),
