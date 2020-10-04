@@ -2,8 +2,12 @@ import random
 
 import torch
 
-from . import kornia_compat as KC
-from .utils import MAX_VALUES_BY_DTYPE, TorchPadding, clipped
+from autoalbument.faster_autoaugment.albumentations_pytorch.affine import (
+    get_scaling_matrix,
+    get_rotation_matrix,
+    warp_affine,
+)
+from autoalbument.faster_autoaugment.albumentations_pytorch.utils import MAX_VALUES_BY_DTYPE, TorchPadding, clipped
 
 
 def solarize(img_batch, threshold):
@@ -40,25 +44,23 @@ def hflip(img_batch):
 
 
 def shift_x(img_batch, dx, padding_mode=TorchPadding.REFLECTION):
-    batch_size, _, _, width = img_batch.size()
-    v = torch.zeros(batch_size, 2).to(img_batch.device)
-    v[:, 0] = dx * width
-    return KC.translate(img_batch, v, align_corners=True, padding_mode=padding_mode)
+    scaling_matrix = get_scaling_matrix(img_batch, dx=dx)
+    return warp_affine(img_batch, scaling_matrix, padding_mode)
 
 
 def shift_y(img_batch, dy, padding_mode=TorchPadding.REFLECTION):
-    batch_size, _, height, _ = img_batch.size()
-    v = torch.zeros(batch_size, 2).to(img_batch.device)
-    v[:, 1] = dy * height
-    return KC.translate(img_batch, v, align_corners=True, padding_mode=padding_mode)
+    scaling_matrix = get_scaling_matrix(img_batch, dy=dy)
+    return warp_affine(img_batch, scaling_matrix, padding_mode)
 
 
 def rotate(img_batch, angle, padding_mode=TorchPadding.REFLECTION):
-    return KC.rotate(img_batch, angle, align_corners=True, padding_mode=padding_mode)
+    rotation_matrix = get_rotation_matrix(img_batch, angle=angle)
+    return warp_affine(img_batch, rotation_matrix, padding_mode)
 
 
 def scale(img_batch, scale, padding_mode=TorchPadding.REFLECTION):
-    return KC.scale(img_batch, scale, align_corners=True, padding_mode=padding_mode)
+    rotation_matrix = get_rotation_matrix(img_batch, scale=scale)
+    return warp_affine(img_batch, rotation_matrix, padding_mode)
 
 
 def cutout(img_batch, num_holes, hole_size, fill_value=0):
