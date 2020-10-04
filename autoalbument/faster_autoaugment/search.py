@@ -79,7 +79,10 @@ class FasterAutoAugment:
         self.saved_policy_state_dict = self.get_policy_state_dict()
 
     def get_policy_state_dict(self):
-        return copy.deepcopy(self.models["policy"].state_dict())
+        state_dict = copy.deepcopy(self.models["policy"].state_dict())
+        for k, v in state_dict.items():
+            state_dict[k] = v.to("cpu")
+        return state_dict
 
     def create_directories(self):
         policy_dir = Path.cwd() / "policy"
