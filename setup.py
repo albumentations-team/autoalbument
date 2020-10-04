@@ -7,7 +7,6 @@ setup(
         "albumentations>=0.4.6",
         "torch>=1.6.0",
         "hydra-core>=1.0",
-        "kornia>=0.4.0",
         "timm",
         "tqdm",
     ],
@@ -17,6 +16,7 @@ setup(
             "autoalbument-search = autoalbument.cli.search:main",
         ],
     },
+    extras_require={"tests": ["pytest"]},
     packages=find_packages(exclude=["tests"]),
     include_package_data=True,
 )
