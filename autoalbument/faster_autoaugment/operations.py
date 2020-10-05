@@ -12,12 +12,12 @@ from autoalbument.faster_autoaugment.albumentations_pytorch import functional as
 
 class _STE(Function):
     @staticmethod
-    def forward(ctx, input_forward: torch.Tensor, input_backward: torch.Tensor) -> torch.Tensor:
+    def forward(ctx, input_forward, input_backward):
         ctx.shape = input_backward.shape
         return input_forward
 
     @staticmethod
-    def backward(ctx, grad_in: torch.Tensor) -> Tuple[None, torch.Tensor]:
+    def backward(ctx, grad_in):
         return None, grad_in.sum_to_size(ctx.shape)
 
 
@@ -52,13 +52,13 @@ class Operation(nn.Module):
         return RelaxedBernoulli(self.temperature, self.probability).rsample(size)
 
     @property
-    def magnitude(self) -> Optional[torch.Tensor]:
+    def magnitude(self):
         if self._magnitude is None:
             return None
         return self._magnitude.clamp(0.0, 1.0)
 
     @property
-    def probability(self) -> torch.Tensor:
+    def probability(self):
         return self._probability.clamp(0.0, 1.0)
 
     def __repr__(self) -> str:
@@ -66,7 +66,7 @@ class Operation(nn.Module):
         magnitude = self.magnitude
         if magnitude is not None:
             magnitude = magnitude.item()
-        temperature = self.temperature.item()
+        temperature = self.temperature.item()  # type: ignore
 
         repr_str = self.__class__.__name__
         repr_str += f"(probability={probability:.3f}, "
