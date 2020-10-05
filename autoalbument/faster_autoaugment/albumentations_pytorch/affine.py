@@ -52,12 +52,21 @@ def convert_2x3_affine_matrix_to_3x3(matrix):
     return torch.cat([matrix, pad])
 
 
+def expand_matrix_at_batch_dimension(matrix, batch_size):
+    return matrix.expand(batch_size, -1, -1)
+
+
 def warp_affine(img_batch, affine_matrix, padding_mode, align_corners=True):
     matrix = convert_2x3_affine_matrix_to_3x3(affine_matrix)
     normalization_matrix = get_normalization_matrix(img_batch)
+
+    batch_size = img_batch.shape[0]
+    matrix = expand_matrix_at_batch_dimension(matrix, batch_size)
+    normalization_matrix = expand_matrix_at_batch_dimension(normalization_matrix, batch_size)
+
     inverse_normalization_matrix = torch.inverse(normalization_matrix)
     theta_3x3 = torch.inverse(normalization_matrix @ matrix @ inverse_normalization_matrix)
-    theta = theta_3x3[:2, :]
-    theta = theta.repeat(img_batch.shape[0], 1, 1)
+    theta = theta_3x3[:, :2, :]
+
     grid = F.affine_grid(theta, img_batch.shape, align_corners=align_corners)
     return F.grid_sample(img_batch, grid, padding_mode=padding_mode, align_corners=align_corners)
