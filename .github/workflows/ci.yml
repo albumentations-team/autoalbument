@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.6, 3.7, 3.8]
       fail-fast: false
     steps:
     - name: Checkout
@@ -41,7 +41,7 @@ jobs:
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Install dependencies
-      run: pip install .[tests]
+      run: pip install -f https://download.pytorch.org/whl/torch_stable.html .[tests]
     - name: Install linters
       run: pip install pydocstyle flake8 flake8-docstrings mypy
     - name: Run PyTest
