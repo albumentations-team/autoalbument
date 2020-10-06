@@ -28,13 +28,19 @@ def main(path, num_classes):
 
     copyfile(dataset_file, dataset_file_destination)
 
-    print(
-        f"\nFiles dataset.py and search.yaml are created in {path}.\n\n"
+    click.echo()
+
+    click.echo(
+        f"Files dataset.py and search.yaml are created in {path}.\n\n"
         f"Next steps:\n"
-        f"1. Add the required implementation for dataset methods in {dataset_file_destination}\n"
-        f"2. Update search parameters in {search_file_destination}\n"
-        f"3. Run AutoAlbument search with the following command:\n\n"
-        f"autoalbument-search --config-dir {path}\n"
+        f"1. Add the required implementation for dataset methods in "
+        + click.style(str(dataset_file_destination), bold=True)
+        + "\n"
+        + "2. [Optional] Adjust search parameters in "
+        + click.style(str(search_file_destination), bold=True)
+        + "\n"
+        + "3. Run AutoAlbument search with the following command:\n\n"
+        + click.style(f"autoalbument-search --config-dir {path}\n", bold=True)
     )
 
 
