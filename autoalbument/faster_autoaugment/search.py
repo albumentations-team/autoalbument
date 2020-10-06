@@ -102,12 +102,25 @@ class FasterAutoAugment:
     def create_loss_tracker(self):
         return MetricTracker()
 
-    def create_dataloader(self):
-        dataset_cls = get_dataset_cls(self.cfg.data.dataset_file)
+    def create_preprocessing_transform(self):
+        preprocessing_config = self.cfg.data.preprocessing
+        preprocessing_transforms = []
+        if preprocessing_config:
+            for transform_name, transform_args in preprocessing_config.items():
+                transform = A.from_dict(
+                    {
+                        "transform": {
+                            "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
+                            **transform_args,
+                        }
+                    }
+                )
+                preprocessing_transforms.append(transform)
         normalization_config = self.cfg.data.normalization
         input_dtype = self.cfg.data.input_dtype
         transform = A.Compose(
             [
+                *preprocessing_transforms,
                 A.Normalize(
                     mean=normalization_config.mean,
                     std=normalization_config.std,
@@ -116,6 +129,12 @@ class FasterAutoAugment:
                 ToTensorV2(),
             ]
         )
+        log.info(f"Preprocessing transform:\n{transform}")
+        return transform
+
+    def create_dataloader(self):
+        dataset_cls = get_dataset_cls(self.cfg.data.dataset_file)
+        transform = self.create_preprocessing_transform()
         dataset = dataset_cls(transform=transform)
         dataloader = torch.utils.data.DataLoader(dataset, **self.cfg.data.dataloader)
         return dataloader

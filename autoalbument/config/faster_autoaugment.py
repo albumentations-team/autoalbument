@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 
 from omegaconf import MISSING
 
@@ -21,6 +21,7 @@ class DataloaderConfig:
 class DataConfig:
     normalization: NormalizationConfig
     dataloader: DataloaderConfig
+    preprocessing: Optional[Any] = None
     dataset_file: str = "dataset.py"
     input_dtype: str = "uint8"
 
