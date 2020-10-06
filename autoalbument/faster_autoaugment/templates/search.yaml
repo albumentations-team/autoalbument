@@ -61,11 +61,11 @@ data:
   #   range [0.0, 1.0].
   input_dtype: uint8
 
-  # Preprocessing values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
-  # Note that regardless of `input_dtype`, the preprocessing function will always receive a `float32` input with values
+  # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
+  # Note that regardless of `input_dtype`, the normalization function will always receive a `float32` input with values
   # in the range [0.0, 1.0], so you should define `mean` and `std` values accordingly. ImageNet normalization is used
   # by default.
-  preprocessing:
+  normalization:
     mean: [0.485, 0.456, 0.406]
     std: [0.229, 0.224, 0.225]
 

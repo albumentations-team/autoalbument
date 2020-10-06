@@ -5,7 +5,7 @@ from omegaconf import MISSING
 
 
 @dataclass
-class PreprocessingConfig:
+class NormalizationConfig:
     mean: List[float] = field(default_factory=lambda: [0.485, 0.456, 0.406])
     std: List[float] = field(default_factory=lambda: [0.229, 0.224, 0.225])
 
@@ -19,7 +19,7 @@ class DataloaderConfig:
 
 @dataclass
 class DataConfig:
-    preprocessing: PreprocessingConfig
+    normalization: NormalizationConfig
     dataloader: DataloaderConfig
     dataset_file: str = "dataset.py"
     input_dtype: str = "uint8"

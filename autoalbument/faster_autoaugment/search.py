@@ -104,13 +104,13 @@ class FasterAutoAugment:
 
     def create_dataloader(self):
         dataset_cls = get_dataset_cls(self.cfg.data.dataset_file)
-        preprocessing_cfg = self.cfg.data.preprocessing
+        normalization_config = self.cfg.data.normalization
         input_dtype = self.cfg.data.input_dtype
         transform = A.Compose(
             [
                 A.Normalize(
-                    mean=preprocessing_cfg.mean,
-                    std=preprocessing_cfg.std,
+                    mean=normalization_config.mean,
+                    std=normalization_config.std,
                     max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype],
                 ),
                 ToTensorV2(),
@@ -139,7 +139,7 @@ class FasterAutoAugment:
 
     def create_models(self):
         model_cfg = self.cfg.model
-        preprocessing_cfg = self.cfg.data.preprocessing
+        normalization_cfg = self.cfg.data.normalization
         base_model = timm.create_model(model_cfg.architecture, pretrained=model_cfg.pretrained, num_classes=0)
         main_model = Discriminator(base_model, num_classes=model_cfg.num_classes).to(self.cfg.device)
         policy_model = Policy.faster_auto_augment_policy(
@@ -147,8 +147,8 @@ class FasterAutoAugment:
             model_cfg.temperature,
             model_cfg.operation_count,
             model_cfg.num_chunks,
-            mean=torch.tensor(preprocessing_cfg.mean),
-            std=torch.tensor(preprocessing_cfg.std),
+            mean=torch.tensor(normalization_cfg.mean),
+            std=torch.tensor(normalization_cfg.std),
         ).to(self.cfg.device)
         return {"main": main_model, "policy": policy_model}
 
