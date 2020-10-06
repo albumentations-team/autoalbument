@@ -9,10 +9,11 @@ setup(
         "hydra-core>=1.0",
         "timm",
         "tqdm",
+        "click",
     ],
     entry_points={
         "console_scripts": [
-            "autoalbument = autoalbument.cli.main:main",
+            "autoalbument-create = autoalbument.cli.create:main",
             "autoalbument-search = autoalbument.cli.search:main",
         ],
     },
