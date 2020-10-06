@@ -5,10 +5,8 @@ import torch.nn.functional as F
 def get_scaling_matrix(img_batch, dx=0, dy=0):
     height, width = img_batch.shape[-2:]
     matrix = torch.eye(2, 3, dtype=img_batch.dtype, device=img_batch.device)
-    if dx is not None:
-        matrix[0, 2] = dx * width
-    if dy is not None:
-        matrix[1, 2] = dy * height
+    matrix[0, 2] = dx * width
+    matrix[1, 2] = dy * height
     return matrix
 
 
