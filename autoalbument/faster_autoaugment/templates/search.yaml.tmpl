@@ -123,6 +123,10 @@ save_checkpoints: False
 # to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
 checkpoint_path: null
 
+# Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
+# this feature.
+tensorboard_logs_dir: ${config_dir:}/outputs/tensorboard_logs
+
 hydra:
   run:
     # Path to the directory that will contain all outputs produced by the search algorithm. `${config_dir:}` contains

@@ -55,3 +55,4 @@ class FasterAutoAugmentSearchConfig:
     cudnn_benchmark: bool = True
     save_checkpoints: bool = False
     checkpoint_path: Optional[str] = None
+    tensorboard_logs_dir: Optional[str] = None

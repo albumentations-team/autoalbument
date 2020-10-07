@@ -1,6 +1,7 @@
 import copy
 import importlib.util
 import logging
+import os
 from collections import defaultdict
 from pathlib import Path
 from typing import Tuple
@@ -12,6 +13,7 @@ from albumentations.pytorch import ToTensorV2
 from torch import Tensor, nn
 from torch.nn import functional as F
 from torch.optim import Adam
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from autoalbument.faster_autoaugment.metrics import get_average_parameter_change
@@ -47,12 +49,16 @@ class MetricTracker:
 
     def update(self, batch_metrics):
         for name, batch_metric in batch_metrics.items():
-            self.metrics[name]["value"] += batch_metric.item()
+            value = batch_metric.item() if isinstance(batch_metric, torch.Tensor) else batch_metric
+            self.metrics[name]["value"] += value
             self.metrics[name]["batch_count"] += 1
             self.metrics[name]["avg"] = self.metrics[name]["value"] / self.metrics[name]["batch_count"]
 
+    def get_avg_values(self):
+        return [(name, value["avg"]) for name, value in self.metrics.items()]
+
     def __repr__(self):
-        return ", ".join(f'{name}={value["avg"]:.3f}' for name, value in self.metrics.items())
+        return ", ".join(f"{name}={avg_value:.3f}" for name, avg_value in self.get_avg_values())
 
 
 def get_dataset_cls(dataset_file, dataset_cls_name="SearchDataset"):
@@ -71,12 +77,18 @@ class FasterAutoAugment:
         self.dataloader = self.create_dataloader()
         self.models = self.create_models()
         self.optimizers = self.create_optimizers()
-        self.loss_tracker = self.create_loss_tracker()
+        self.metric_tracker = self.create_metric_tracker()
         self.paths = self.create_directories()
+        self.tensorboard_writer = self.create_tensorboard_writer()
         self.epoch = None
         if self.cfg.checkpoint_path:
             self.load_checkpoint()
         self.saved_policy_state_dict = self.get_policy_state_dict()
+
+    def create_tensorboard_writer(self):
+        if self.cfg.tensorboard_logs_dir:
+            return SummaryWriter(os.path.join(self.cfg.tensorboard_logs_dir, os.getcwd().replace(os.sep, ".")))
+        return None
 
     def get_policy_state_dict(self):
         state_dict = copy.deepcopy(self.models["policy"].state_dict())
@@ -99,7 +111,7 @@ class FasterAutoAugment:
     def get_latest_policy_save_path(self):
         return
 
-    def create_loss_tracker(self):
+    def create_metric_tracker(self):
         return MetricTracker()
 
     def create_preprocessing_transform(self):
@@ -230,20 +242,17 @@ class FasterAutoAugment:
             "a_loss": a_loss,
         }
 
-    def get_progress_bar_description(self, average_parameter_change=None):
-        description = f"Epoch: {self.epoch}. {self.loss_tracker}"
-        if average_parameter_change is not None:
-            description += f". Average Parameter Change: {average_parameter_change:.6f}"
-        return description
+    def get_progress_bar_description(self):
+        return f"Epoch: {self.epoch}. {self.metric_tracker}"
 
     def train_epoch(self):
-        self.loss_tracker.reset()
+        self.metric_tracker.reset()
         pbar = tqdm(total=len(self.dataloader))
         for input, target in self.dataloader:
             input = input.to(self.cfg.device)
             target = target.to(self.cfg.device)
             loss_dict = self.train_step(input, target)
-            self.loss_tracker.update(loss_dict)
+            self.metric_tracker.update(loss_dict)
             pbar.set_description(self.get_progress_bar_description())
             pbar.update()
 
@@ -251,8 +260,15 @@ class FasterAutoAugment:
             self.saved_policy_state_dict, self.get_policy_state_dict()
         )
         self.saved_policy_state_dict = self.get_policy_state_dict()
-        pbar.set_description(self.get_progress_bar_description(average_parameter_change))
+        self.metric_tracker.update({"Average Parameter change": average_parameter_change})
+        pbar.set_description(self.get_progress_bar_description())
         pbar.close()
+
+    def write_tensorboard_logs(self):
+        if not self.tensorboard_writer:
+            return
+        for metric, avg_value in self.metric_tracker.get_avg_values():
+            self.tensorboard_writer.add_scalar(metric, avg_value, self.epoch)
 
     def save_policy(self):
         transform = self.models["policy"].create_transform(input_dtype=self.cfg.data.input_dtype)
@@ -325,6 +341,7 @@ class FasterAutoAugment:
         for epoch in range(self.start_epoch, self.cfg.optim.epochs + 1):
             self.epoch = epoch
             self.train_epoch()
+            self.write_tensorboard_logs()
             self.save()
 
         log.info(self.get_search_summary())
