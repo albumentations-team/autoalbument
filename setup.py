@@ -23,6 +23,7 @@ setup(
         "tqdm",
         "click",
         "colorama",
+        "tensorboard",
     ],
     entry_points={
         "console_scripts": [
