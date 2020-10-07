@@ -58,7 +58,7 @@ class MetricTracker:
         return [(name, value["avg"]) for name, value in self.metrics.items()]
 
     def __repr__(self):
-        return ", ".join(f"{name}={avg_value:.3f}" for name, avg_value in self.get_avg_values())
+        return ", ".join(f"{name}={avg_value:.6f}" for name, avg_value in self.get_avg_values())
 
 
 def get_dataset_cls(dataset_file, dataset_cls_name="SearchDataset"):
