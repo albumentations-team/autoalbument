@@ -4,7 +4,7 @@ setup(
     name="autoalbument",
     version="0.0.1",
     install_requires=[
-        "albumentations>=0.4.6",
+        "albumentations @ https://github.com/albumentations-team/albumentations/archive/updated_transforms.zip#egg=albumentations-0.4.7",  # noqa: E501
         "torch>=1.6.0",
         "hydra-core>=1.0",
         "timm",
