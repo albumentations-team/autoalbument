@@ -58,7 +58,7 @@ class SearchDataset(torch.utils.data.Dataset):
         return image, label
 ```
 
-### 3. [Optional] Adjust search parameters in `search.yaml`.
+### 3. \[Optional\] Adjust search parameters in `search.yaml`.
 You may want to change parameters that AutoAlbument will use to search for augmentation policies. To do this, you need to edit the `search.yaml` file created by `autoalbument-create` at step 1. Each configuration parameter contains a comment that describes the meaning of the setting.
 
 `search.yaml` is a [Hydra](https://hydra.cc/) config file. You can use all Hydra features inside it.
