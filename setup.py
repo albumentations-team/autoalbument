@@ -10,6 +10,7 @@ setup(
         "timm",
         "tqdm",
         "click",
+        "colorama",
     ],
     entry_points={
         "console_scripts": [
