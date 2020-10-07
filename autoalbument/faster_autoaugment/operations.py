@@ -1,5 +1,9 @@
+"""
+Based on the official implementation of Faster AutoAugment
+https://github.com/moskomule/dda/blob/master/dda/operations.py
+"""
+
 import warnings
-from typing import Optional, Tuple
 
 import albumentations as A
 import torch

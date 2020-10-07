@@ -1,3 +1,8 @@
+"""
+Based on the official implementation of Faster AutoAugment
+https://github.com/moskomule/dda/blob/master/faster_autoaugment/policy.py
+"""
+
 import random
 from copy import deepcopy
 
