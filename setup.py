@@ -1,8 +1,20 @@
+import io
+import os
+import re
+
 from setuptools import find_packages, setup
+
+
+def get_version():
+    current_dir = os.path.abspath(os.path.dirname(__file__))
+    version_file = os.path.join(current_dir, "autoalbument", "__init__.py")
+    with io.open(version_file, encoding="utf-8") as f:
+        return re.search(r'^__version__ = [\'"]([^\'"]*)[\'"]', f.read(), re.M).group(1)
+
 
 setup(
     name="autoalbument",
-    version="0.0.1",
+    version=get_version(),
     install_requires=[
         "albumentations @ https://github.com/albumentations-team/albumentations/archive/updated_transforms.zip#egg=albumentations-0.4.7",  # noqa: E501
         "torch>=1.6.0",
