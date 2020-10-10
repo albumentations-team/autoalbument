@@ -119,25 +119,29 @@ class FasterAutoAugment:
     def create_metric_tracker(self):
         return MetricTracker()
 
-    def create_preprocessing_transform(self):
+    def get_preprocessing_transforms(self):
         preprocessing_config = self.cfg.data.preprocessing
         preprocessing_transforms = []
         if preprocessing_config:
-            for transform_name, transform_args in preprocessing_config.items():
-                transform = A.from_dict(
-                    {
-                        "transform": {
-                            "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
-                            **transform_args,
+            for preprocessing_transform in preprocessing_config:
+                for transform_name, transform_args in preprocessing_transform.items():
+                    transform = A.from_dict(
+                        {
+                            "transform": {
+                                "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
+                                **transform_args,
+                            }
                         }
-                    }
-                )
-                preprocessing_transforms.append(transform)
+                    )
+                    preprocessing_transforms.append(transform)
+        return preprocessing_transforms
+
+    def create_preprocessing_transform(self):
         normalization_config = self.cfg.data.normalization
         input_dtype = self.cfg.data.input_dtype
         transform = A.Compose(
             [
-                *preprocessing_transforms,
+                *self.get_preprocessing_transforms(),
                 A.Normalize(
                     mean=normalization_config.mean,
                     std=normalization_config.std,
@@ -276,7 +280,11 @@ class FasterAutoAugment:
             self.tensorboard_writer.add_scalar(metric, avg_value, self.epoch)
 
     def save_policy(self):
-        transform = self.models["policy"].create_transform(input_dtype=self.cfg.data.input_dtype)
+
+        transform = self.models["policy"].create_transform(
+            input_dtype=self.cfg.data.input_dtype,
+            preprocessing_transforms=self.get_preprocessing_transforms(),
+        )
         policy_save_path = self.paths["policy_dir"] / f"epoch_{self.epoch}.json"
         A.save(transform, str(policy_save_path))
         symlink(policy_save_path, self.paths["latest_policy_path"])

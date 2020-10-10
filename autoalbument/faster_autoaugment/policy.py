@@ -164,10 +164,11 @@ class Policy(nn.Module):
             std=std,
         )
 
-    def create_transform(self, input_dtype="float32"):
+    def create_transform(self, input_dtype="float32", preprocessing_transforms=()):
         sub_policy_p = 1 / len(self.sub_policies)
         return Compose(
             [
+                *preprocessing_transforms,
                 OneOf([sp.create_transform(input_dtype, p=sub_policy_p) for sp in self.sub_policies], p=1),
                 A.Normalize(
                     mean=self._mean.tolist(),
