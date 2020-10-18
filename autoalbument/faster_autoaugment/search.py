@@ -4,10 +4,8 @@ https://github.com/moskomule/dda/blob/master/faster_autoaugment/search.py
 """
 
 import copy
-import importlib.util
 import logging
 import os
-from collections import defaultdict
 from pathlib import Path
 from typing import Tuple
 
@@ -16,65 +14,66 @@ import timm
 import torch
 from albumentations.pytorch import ToTensorV2
 from torch import Tensor, nn
-from torch.nn import functional as F
+from torch.nn import Flatten
 from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from autoalbument.faster_autoaugment.metrics import get_average_parameter_change
-from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE
+from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, get_dataset_cls, MetricTracker
 from autoalbument.utils.files import symlink
-from autoalbument.utils.hydra import get_dataset_filepath
 from autoalbument.faster_autoaugment.policy import Policy
+import segmentation_models_pytorch as smp
 
 log = logging.getLogger(__name__)
 
 
-class Discriminator(nn.Module):
-    def __init__(self, base_model, num_classes):
+class ClassificationDiscriminator(nn.Module):
+    def __init__(self, architecture, pretrained, num_classes):
         super().__init__()
-        self.base_model = base_model
-        num_features = self.base_model.feature_info[-1]["num_chs"]
-        self.classifier = nn.Linear(num_features, num_classes)
+        self.base_model = timm.create_model(architecture, pretrained=pretrained)
+        self.base_model.reset_classifier(num_classes)
+        self.classifier = self.base_model.get_classifier()
+        num_features = self.classifier.in_features
         self.discriminator = nn.Sequential(
             nn.Linear(num_features, num_features), nn.ReLU(), nn.Linear(num_features, 1)
         )
 
     def forward(self, input: Tensor) -> Tuple[Tensor, Tensor]:
-        x = self.base_model(input)
+        x = self.base_model.forward_features(input)
+        x = self.base_model.global_pool(x).flatten(1)
         return self.classifier(x), self.discriminator(x).view(-1)
 
 
-class MetricTracker:
-    def __init__(self):
-        self.reset()
+class SegmentationDiscriminator(nn.Module):
+    def __init__(self, architecture, encoder_architecture, num_classes, pretrained):
+        super().__init__()
+        model = getattr(smp, architecture)
 
-    def reset(self):
-        self.metrics = defaultdict(lambda: {"value": 0, "batch_count": 0, "avg": 0})
+        self.base_model = model(
+            encoder_architecture, encoder_weights=self._get_encoder_weights(pretrained), classes=num_classes
+        )
+        num_features = self.base_model.encoder.out_channels[-1]
+        self.base_model.classification_head = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            Flatten(),
+            nn.Linear(num_features, num_features),
+            nn.ReLU(),
+            nn.Linear(num_features, 1),
+        )
 
-    def update(self, batch_metrics):
-        for name, batch_metric in batch_metrics.items():
-            value = batch_metric.item() if isinstance(batch_metric, torch.Tensor) else batch_metric
-            self.metrics[name]["value"] += value
-            self.metrics[name]["batch_count"] += 1
-            self.metrics[name]["avg"] = self.metrics[name]["value"] / self.metrics[name]["batch_count"]
+    @staticmethod
+    def _get_encoder_weights(pretrained):
+        if isinstance(pretrained, bool):
+            return "imagenet" if pretrained else None
+        return pretrained
 
-    def get_avg_values(self):
-        return [(name, value["avg"]) for name, value in self.metrics.items()]
-
-    def __repr__(self):
-        return ", ".join(f"{name}={avg_value:.6f}" for name, avg_value in self.get_avg_values())
-
-
-def get_dataset_cls(dataset_file, dataset_cls_name="SearchDataset"):
-    dataset_filepath = get_dataset_filepath(dataset_file)
-    spec = importlib.util.spec_from_file_location("dataset", dataset_filepath)
-    dataset = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(dataset)
-    return getattr(dataset, dataset_cls_name)
+    def forward(self, input: Tensor) -> Tuple[Tensor, Tensor]:
+        mask, discriminator_output = self.base_model(input)
+        return mask, discriminator_output.view(-1)
 
 
-class FasterAutoAugment:
+class FasterAutoAugmentBase:
     def __init__(self, cfg):
         self.cfg = cfg
         torch.backends.cudnn.benchmark = self.cfg.cudnn_benchmark
@@ -82,9 +81,11 @@ class FasterAutoAugment:
         self.dataloader = self.create_dataloader()
         self.models = self.create_models()
         self.optimizers = self.create_optimizers()
+        self.loss = self.create_loss()
         self.metric_tracker = self.create_metric_tracker()
         self.paths = self.create_directories()
         self.tensorboard_writer = self.create_tensorboard_writer()
+        self.task_factor = self.get_task_factor()
         self.epoch = None
         if self.cfg.checkpoint_path:
             self.load_checkpoint()
@@ -147,7 +148,7 @@ class FasterAutoAugment:
                     std=normalization_config.std,
                     max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype],
                 ),
-                ToTensorV2(),
+                ToTensorV2(transpose_mask=True),
             ]
         )
         log.info(f"Preprocessing transform:\n{transform}")
@@ -177,20 +178,29 @@ class FasterAutoAugment:
             "policy": policy_optimizer,
         }
 
-    def create_models(self):
-        model_cfg = self.cfg.model
+    def create_main_model(self):
+        raise NotImplementedError
+
+    def create_policy_model(self):
+        policy_model_cfg = self.cfg.policy_model
         normalization_cfg = self.cfg.data.normalization
-        base_model = timm.create_model(model_cfg.architecture, pretrained=model_cfg.pretrained, num_classes=0)
-        main_model = Discriminator(base_model, num_classes=model_cfg.num_classes).to(self.cfg.device)
         policy_model = Policy.faster_auto_augment_policy(
-            model_cfg.num_sub_policies,
-            model_cfg.temperature,
-            model_cfg.operation_count,
-            model_cfg.num_chunks,
+            policy_model_cfg.num_sub_policies,
+            policy_model_cfg.temperature,
+            policy_model_cfg.operation_count,
+            policy_model_cfg.num_chunks,
             mean=torch.tensor(normalization_cfg.mean),
             std=torch.tensor(normalization_cfg.std),
         ).to(self.cfg.device)
+        return policy_model
+
+    def create_models(self):
+        main_model = self.create_main_model()
+        policy_model = self.create_policy_model()
         return {"main": main_model, "policy": policy_model}
+
+    def policy_forward_for_policy_train(self, a_input, a_target):
+        raise NotImplementedError
 
     def gradient_penalty(self, real: Tensor, fake: Tensor) -> Tensor:
         alpha = real.new_empty(real.size(0), 1, 1, 1).uniform_(0, 1)
@@ -207,6 +217,9 @@ class FasterAutoAugment:
         )[0]
         return (grad.norm(2, dim=1) - 1).pow(2).mean()
 
+    def create_loss(self):
+        return nn.CrossEntropyLoss().to(self.cfg.device)
+
     def wgan_loss(
         self, n_input: Tensor, n_target: Tensor, a_input: Tensor, a_target: Tensor
     ) -> Tuple[Tensor, Tensor, Tensor]:
@@ -214,26 +227,29 @@ class FasterAutoAugment:
         self.models["main"].requires_grad_(True)
         self.models["main"].zero_grad()
         output, n_output = self.models["main"](n_input)
-        loss = self.cfg.model.cls_factor * F.cross_entropy(output, n_target)
+        loss = self.task_factor * self.loss(output, n_target)
         loss.backward(retain_graph=True)
         d_n_loss = n_output.mean()
         d_n_loss.backward(-ones)
 
         with torch.no_grad():
             a_input = self.models["policy"].denormalize_(a_input)
-            augmented = self.models["policy"](a_input)
+            augmented = self.models["policy"]({"image_batch": a_input})["image_batch"]
 
         _, a_output = self.models["main"](augmented)
         d_a_loss = a_output.mean()
         d_a_loss.backward(ones)
-        gp = self.cfg.model.gp_factor * self.gradient_penalty(n_input, augmented)
+        gp = self.cfg.policy_model.gp_factor * self.gradient_penalty(n_input, augmented)
         gp.backward()
         self.optimizers["main"].step()
 
         self.models["main"].requires_grad_(False)
         self.models["policy"].zero_grad()
-        _output, a_output = self.models["main"](self.models["policy"](a_input))
-        _loss = self.cfg.model.cls_factor * F.cross_entropy(_output, a_target)
+
+        augmented_input, maybe_augmented_target = self.policy_forward_for_policy_train(a_input, a_target)
+
+        _output, a_output = self.models["main"](augmented_input)
+        _loss = self.task_factor * self.loss(_output, maybe_augmented_target)
         _loss.backward(retain_graph=True)
         a_loss = a_output.mean()
         a_loss.backward(-ones)
@@ -242,6 +258,7 @@ class FasterAutoAugment:
 
     def train_step(self, input, target):
         b = input.size(0) // 2
+        target.requires_grad_(False)
         a_input, a_target = input[:b], target[:b]
         n_input, n_target = input[b:], target[b:]
         loss, d_loss, a_loss = self.wgan_loss(n_input, n_target, a_input, a_target)
@@ -338,14 +355,20 @@ class FasterAutoAugment:
         load_command = f'transform = A.load("{latest_policy_path}")\n'
 
         separator = "-" * len(load_command)
+        if self.cfg.task == "classification":
+            transform_text = "transformed = transform(image=image)\n" 'transformed_image = transformed["image"]\n'
+        else:
+            transform_text = (
+                "transformed = transform(image=image, mask=mask)\n"
+                'transformed_image = transformed["image"]\n'
+                'transformed_mask = transformed["mask"]\n'
+            )
+
         summary.append(
             f"\nUse Albumentations to load the found policies and transform images:\n"
             f"{separator}\n"
             f"import albumentations as A\n\n"
-            f'transform = A.load("{latest_policy_path}")\n'
-            f"transformed = transform(image=image)\n"
-            f'transformed_image = transformed["image"]\n'
-            f"{separator}\n"
+            f'transform = A.load("{latest_policy_path}")\n' + transform_text + f"{separator}\n"
         )
 
         return "\n".join(summary)
@@ -358,3 +381,53 @@ class FasterAutoAugment:
             self.save()
 
         log.info(self.get_search_summary())
+
+
+class FAAClassification(FasterAutoAugmentBase):
+    def create_main_model(self):
+        model_cfg = self.cfg.classification_model
+        main_model = ClassificationDiscriminator(
+            model_cfg.architecture, num_classes=model_cfg.num_classes, pretrained=model_cfg.pretrained
+        ).to(self.cfg.device)
+        return main_model
+
+    def create_loss(self):
+        return nn.CrossEntropyLoss().to(self.cfg.device)
+
+    def policy_forward_for_policy_train(self, a_input, a_target):
+        output = self.models["policy"]({"image_batch": a_input})["image_batch"]
+        return output, a_target
+
+    def get_task_factor(self):
+        return self.cfg.classification_model.task_factor
+
+
+class FAASemanticSegmentation(FasterAutoAugmentBase):
+    def create_main_model(self):
+        model_cfg = self.cfg.semantic_segmentation_model
+        main_model = SegmentationDiscriminator(
+            model_cfg.architecture,
+            encoder_architecture=model_cfg.encoder_architecture,
+            num_classes=model_cfg.num_classes,
+            pretrained=model_cfg.pretrained,
+        ).to(self.cfg.device)
+        return main_model
+
+    def create_loss(self):
+        return nn.BCEWithLogitsLoss().to(self.cfg.device)
+
+    def policy_forward_for_policy_train(self, a_input, a_target):
+        output = self.models["policy"]({"image_batch": a_input, "mask_batch": a_target})
+        return output["image_batch"], output["mask_batch"]
+
+    def get_task_factor(self):
+        return self.cfg.semantic_segmentation_model.task_factor
+
+
+def get_faa_seacher(cfg):
+    task = cfg.task
+    if task == "semantic_segmentation":
+        return FAASemanticSegmentation(cfg)
+    elif task == "classification":
+        return FAAClassification(cfg)
+    raise ValueError(f"Unsupported task: {task}. Supported tasks: classification, semantic_segmentation.")

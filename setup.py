@@ -19,7 +19,8 @@ setup(
         "albumentations @ https://github.com/albumentations-team/albumentations/archive/updated_transforms.zip#egg=albumentations-0.4.7",  # noqa: E501
         "torch>=1.6.0",
         "hydra-core>=1.0",
-        "timm",
+        "timm==0.1.20",  # This version is required for segmentation-models-pytorch
+        "segmentation-models-pytorch",
         "tqdm",
         "click",
         "colorama",

@@ -13,13 +13,19 @@ from autoalbument.utils.templates import AutoAlbumentTemplate
     required=True,
     help="Path to a directory where AutoAlbument will place config files.",
 )
+@click.option(
+    "--task",
+    type=click.Choice(["classification", "semantic_segmentation"]),
+    required=True,
+    help="Deep learning task (either classification or semantic segmentation)",
+)
 @click.option("--num-classes", type=int, required=True, help="Number of classes in the dataset.")
-def main(config_dir, num_classes):
+def main(config_dir, task, num_classes):
     config_dir = Path(config_dir)
     config_dir.mkdir(parents=True, exist_ok=True)
     templates_dir = Path(__file__).parent.parent / "faster_autoaugment" / "templates"
-    dataset_file = templates_dir / "dataset.py.tmpl"
-    search_config_file = templates_dir / "search.yaml.tmpl"
+    dataset_file = templates_dir / task / "dataset.py.tmpl"
+    search_config_file = templates_dir / task / "search.yaml.tmpl"
     dataset_file_destination = config_dir / "dataset.py"
     search_file_destination = config_dir / "search.yaml"
 

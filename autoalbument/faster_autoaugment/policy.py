@@ -26,7 +26,7 @@ from autoalbument.faster_autoaugment.operations import (
     Solarize,
     VerticalFlip,
 )
-from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE
+from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, target_requires_grad
 
 
 class SubPolicyStage(nn.Module):
@@ -41,7 +41,15 @@ class SubPolicyStage(nn.Module):
         self.temperature = temperature
 
     def forward(self, input: Tensor) -> Tensor:
-        return (torch.stack([op(input) for op in self.operations]) * self.weights.view(-1, 1, 1, 1, 1)).sum(0)
+        targets = input.keys()
+        operation_outputs = [op(input) for op in self.operations]
+        output = {}
+        for target in targets:
+            with torch.set_grad_enabled(target_requires_grad(target)):
+                output[target] = (
+                    torch.stack([op[target] for op in operation_outputs]) * self.weights.view(-1, 1, 1, 1, 1)
+                ).sum(0)
+        return output
 
     @property
     def weights(self):
@@ -104,15 +112,29 @@ class Policy(nn.Module):
         for p in self.parameters():
             nn.init.uniform_(p, 0, 1)
 
-    def forward(self, input: Tensor) -> Tensor:
-        # [0, 1] -> [-1, 1]
-        if self.num_chunks > 1:
-            out = [self._forward(inp) for inp in input.chunk(self.num_chunks)]
-            x = torch.cat(out, dim=0)
-        else:
-            x = self._forward(input)
+    def forward(self, input):
+        targets = input.keys()
 
-        return self.normalize_(x)
+        chunked_input = {}
+        num_chunks = None
+        for target in targets:
+            chunked_input[target] = input[target].chunk(self.num_chunks)
+            num_chunks = len(chunked_input[target])
+
+        prepared_chunked_input = []
+        for i in range(num_chunks):
+            prepared_chunked_input.append({target: chunked_input[target][i] for target in targets})
+
+        if self.num_chunks > 1:
+            output = {}
+            out_chunks = [self._forward(inp) for inp in prepared_chunked_input]
+            for target in targets:
+                output[target] = torch.cat([out_chunk[target] for out_chunk in out_chunks], dim=0)
+        else:
+            output = self._forward(input)
+
+        output["image_batch"] = self.normalize_(output["image_batch"])
+        return output
 
     def _forward(self, input: Tensor) -> Tensor:
         index = random.randrange(self.num_sub_policies)
@@ -175,6 +197,6 @@ class Policy(nn.Module):
                     std=self._std.tolist(),
                     max_pixel_value=MAX_VALUES_BY_INPUT_DTYPE[input_dtype],
                 ),
-                ToTensorV2(),
+                ToTensorV2(transpose_mask=True),
             ]
         )

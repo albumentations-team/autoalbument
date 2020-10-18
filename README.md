@@ -1,6 +1,6 @@
 # AutoAlbument
 
-AutoAlbument is an AutoML tool that learns augmentation policies from data. You can apply discovered policies with [Albumentations](https://github.com/albumentations-team/albumentations), an image augmentation library. For now, only classification tasks are supported.
+AutoAlbument is an AutoML tool that learns augmentation policies from data. You can apply discovered policies with [Albumentations](https://github.com/albumentations-team/albumentations), an image augmentation library. For now, classification and semantic segmentation tasks are supported.
 
 
 ## Table of contents
@@ -21,15 +21,16 @@ Note: for now, AutoAlbument uses features that are available only in this branch
 
 ## Usage
 ### 1. Create a directory with configuration files.
- Run `autoalbument-create --config-dir </path/to/directory> --num-classes <num_classes>`, e.g. `autoalbument-create --config-dir ~/experiments/autoalbument-search-cifar10 --num-classes 10`.
+ Run `autoalbument-create --config-dir </path/to/directory> --task <deep_learning_task> --num-classes <num_classes>`, e.g. `autoalbument-create --config-dir ~/experiments/autoalbument-search-cifar10 --task classification --num-classes 10`.
  - A value for the `--config-dir` option should contain a path to the directory. AutoAlbument will create this directory and put two files into it: `dataset.py` and `search.yaml` (more on them later).
- - A value for the `--num-classes` option should contain the number of distinct classes in the classification dataset that will be used to discover parameters of augmentations.
+  - A value for the `--task` option should contain the name of a deep learning task. Supported values are `classification` and `semantic_segmentation`.
+ - A value for the `--num-classes` option should contain the number of distinct classes in the classification or segmentation dataset.
 
 ### 2. Add implementation for `__len__` and `__getitem__` methods in dataset.py.
 
 The `dataset.py` file created at step 1 by `autoalbument-create` contains stubs for implementing a PyTorch dataset (you can read more about creating custom PyTorch datasets [here](https://pytorch.org/tutorials/beginner/data_loading_tutorial.html)).
 
-Here is an example stub:
+#### An example dataset stub for a classification task:
 
 ```
 class SearchDataset(torch.utils.data.Dataset):
@@ -58,6 +59,43 @@ class SearchDataset(torch.utils.data.Dataset):
             image = transformed["image"]
 
         return image, label
+```
+
+#### An example dataset stub for a semantic segmentation task:
+
+```
+import torch.utils.data
+
+
+class SearchDataset(torch.utils.data.Dataset):
+
+    def __init__(self, transform=None):
+        self.transform = transform
+        # Implement additional initialization logic if needed
+
+    def __len__(self):
+        # Replace `...` with the actual implementation
+        ...
+
+    def __getitem__(self, index):
+        # Implement logic to get an image and its mask using the received index.
+        #
+        # `image` should be a NumPy array with the shape [height, width, num_channels].
+        # If an image contains three color channels, it should use an RGB color scheme.
+        #
+        # `mask` should be a NumPy array with the shape [height, width, num_classes] where `num_classes`
+        # is a value set in the `search.yaml` file. Each mask channel should encode values for a single class (usually
+        # pixel in that channel has a value of 1.0 if the corresponding pixel from the image belongs to this class and
+        # 0.0 otherwise). During augmentation search, `nn.BCEWithLogitsLoss` is used as a segmentation loss.
+
+        image = ...
+        mask = ...
+
+        if self.transform is not None:
+            transformed = self.transform(image=image, mask=mask)
+            image = transformed["image"]
+            mask = transformed["mask"]
+        return image, mask
 ```
 
 ### 3. \[Optional\] Adjust search parameters in `search.yaml`.
@@ -94,17 +132,10 @@ You can read more about using Albumentation for augmentation in [this article](h
 
 
 ## Examples
-The [`examples`](examples/) directory contains example configs for different datasets.
+The [`examples`](examples/) directory contains example configs for different tasks and datasets.
 
 
 ## FAQ
-#### How can I decide which search epoch produced the best augmentation policies?
-As a crude heuristic, you can monitor the value of the `Average Parameter Change` metric. The metric is calculated using the following formula:
-
-![](https://render.githubusercontent.com/render/math?math=\frac{1}{n}\sum_{i=1}^{n}\left%20|%20m_i%27%20\cdot%20p_i%27%20-%20m_i%20\cdot%20p_i%20\right%20|)
-
-- `m'`  and `m` are magnitude values for the i-th augmentation at the end and the beginning of the epoch, respectively.
-- `p'`  and `p` are probability values for the i-th augmentation at the end and the beginning of the epoch, respectively.
 
 #### Search takes a lot of time. How can I speed it up?
 Instead of a full training dataset, you can use a reduced version to search for augmentation policies. For example, the authors of Faster AutoAugment used 6000 images from the 120 selected classes to find augmentation policies for ImageNet (while the full dataset for ILSVRC contains 1.2 million images and 1000 classes).

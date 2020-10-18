@@ -34,11 +34,7 @@ class OptimConfig:
 
 
 @dataclass
-class ModelConfig:
-    num_classes: int = MISSING
-    architecture: str = "resnet18"
-    pretrained: bool = False
-    cls_factor: float = 0.1
+class PolicyModelConfig:
     gp_factor: float = 10
     temperature: float = 0.05
     num_sub_policies: int = 150
@@ -47,12 +43,32 @@ class ModelConfig:
 
 
 @dataclass
+class ClassificationModelConfig:
+    num_classes: int = MISSING
+    architecture: str = "resnet18"
+    pretrained: bool = False
+    task_factor: float = 0.1
+
+
+@dataclass
+class SemanticSegmentationModelConfig:
+    num_classes: int = MISSING
+    architecture: str = "Unet"
+    encoder_architecture: str = "resnet18"
+    pretrained: bool = False
+    task_factor: float = 0.1
+
+
+@dataclass
 class FasterAutoAugmentSearchConfig:
-    model: ModelConfig
+    policy_model: PolicyModelConfig
     data: DataConfig
     optim: OptimConfig
     device: str = "cuda"
+    task: str = MISSING
     cudnn_benchmark: bool = True
     save_checkpoints: bool = False
     checkpoint_path: Optional[str] = None
     tensorboard_logs_dir: Optional[str] = None
+    classification_model: Optional[ClassificationModelConfig] = None
+    semantic_segmentation_model: Optional[SemanticSegmentationModelConfig] = None

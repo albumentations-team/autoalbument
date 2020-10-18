@@ -12,6 +12,7 @@ from torch.autograd import Function
 from torch.distributions import RelaxedBernoulli
 
 from autoalbument.faster_autoaugment.albumentations_pytorch import functional as F
+from autoalbument.faster_autoaugment.utils import target_requires_grad
 
 
 class _STE(Function):
@@ -25,7 +26,7 @@ class _STE(Function):
         return None, grad_in.sum_to_size(ctx.shape)
 
 
-def ste(input_forward: torch.Tensor, input_backward: torch.Tensor) -> torch.Tensor:
+def ste(input_forward: torch.Tensor, input_backward: torch.Tensor):
     return _STE.apply(input_forward, input_backward).clone()
 
 
@@ -35,11 +36,13 @@ class Operation(nn.Module):
         temperature: float = 0.1,
         value_range=(0.0, 1.0),
         has_magnitude=True,
+        is_spatial_level=False,
         ste=False,
         requires_uint8_scaling=False,
     ):
 
         super().__init__()
+        self.is_spatial_level = is_spatial_level
         self.ste = ste
         self.value_range = value_range
         self.requires_uint8_scaling = requires_uint8_scaling
@@ -47,11 +50,19 @@ class Operation(nn.Module):
         self._probability = nn.Parameter(torch.empty(1))
         self.register_buffer("temperature", torch.empty(1).fill_(temperature))
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        mask = self.get_probability_mask(input.size(0))
-        return (mask * self.operation(input) + (1 - mask) * input).clamp_(0, 1)
+    def forward(self, input):
+        mask = self.get_probability_mask(input["image_batch"].size(0))
+        operation_output = self.operation(input)
 
-    def get_probability_mask(self, batch_size) -> torch.Tensor:
+        targets = input.keys()
+        output = {}
+        for target in targets:
+            with torch.set_grad_enabled(target_requires_grad(target)):
+                output[target] = (mask * operation_output[target] + (1 - mask) * input[target]).clamp_(0, 1)
+
+        return output
+
+    def get_probability_mask(self, batch_size):
         size = (batch_size, 1, 1)
         return RelaxedBernoulli(self.temperature, self.probability).rsample(size)
 
@@ -62,10 +73,17 @@ class Operation(nn.Module):
         return self._magnitude.clamp(0.0, 1.0)
 
     @property
+    def targets(self):
+        return {
+            "image_batch": self.apply_operation,
+            "mask_batch": self.apply_operation_to_mask,
+        }
+
+    @property
     def probability(self):
         return self._probability.clamp(0.0, 1.0)
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         probability = self.probability.item()
         magnitude = self.magnitude
         if magnitude is not None:
@@ -79,12 +97,24 @@ class Operation(nn.Module):
         repr_str += f"temperature={temperature:.3f})"
         return repr_str
 
+    def apply_operation_to_mask(self, input, value):
+        with torch.no_grad():
+            if self.is_spatial_level:
+                return self.apply_operation(input, value)
+            return input
+
     def operation(self, input):
         magnitude = self.magnitude
         value = convert_value_range(magnitude, self.value_range) if magnitude is not None else None
-        output = self.apply_operation(input, value)
-        if self.ste:
-            output = ste(output, magnitude)
+
+        output = {}
+        targets = input.keys()
+        for target in targets:
+            operation_fn = self.targets[target]
+            operation_output = operation_fn(input[target], value)
+            if target_requires_grad(target) and self.ste:
+                operation_output = ste(operation_output, magnitude)
+            output[target] = operation_output
         return output
 
     def create_transform(self, input_dtype, p):
@@ -172,7 +202,7 @@ class Solarize(Operation):
 
 class HorizontalFlip(Operation):
     def __init__(self, temperature):
-        super().__init__(temperature, has_magnitude=False)
+        super().__init__(temperature, has_magnitude=False, is_spatial_level=True)
 
     def apply_operation(self, input, value):
         return F.hflip(input)
@@ -183,7 +213,7 @@ class HorizontalFlip(Operation):
 
 class VerticalFlip(Operation):
     def __init__(self, temperature):
-        super().__init__(temperature, has_magnitude=False)
+        super().__init__(temperature, has_magnitude=False, is_spatial_level=True)
 
     def apply_operation(self, input, value):
         return F.vflip(input)
@@ -194,7 +224,7 @@ class VerticalFlip(Operation):
 
 class ShiftX(Operation):
     def __init__(self, temperature):
-        super().__init__(temperature, value_range=(-1.0, 1.0))
+        super().__init__(temperature, value_range=(-1.0, 1.0), is_spatial_level=True)
 
     def apply_operation(self, input, value):
         return F.shift_x(input, dx=value)
@@ -211,7 +241,7 @@ class ShiftX(Operation):
 
 class ShiftY(Operation):
     def __init__(self, temperature):
-        super().__init__(temperature, value_range=(-1.0, 1.0))
+        super().__init__(temperature, value_range=(-1.0, 1.0), is_spatial_level=True)
 
     def apply_operation(self, input, value):
         return F.shift_y(input, dy=value)
@@ -228,7 +258,7 @@ class ShiftY(Operation):
 
 class Scale(Operation):
     def __init__(self, temperature):
-        super().__init__(temperature, value_range=(0 + 1e-8, 10.0))
+        super().__init__(temperature, value_range=(0 + 1e-8, 10.0), is_spatial_level=True)
 
     def apply_operation(self, input, value):
         return F.scale(input, scale=value)
@@ -245,7 +275,7 @@ class Scale(Operation):
 
 class Rotate(Operation):
     def __init__(self, temperature):
-        super().__init__(temperature, value_range=(-180, 180))
+        super().__init__(temperature, value_range=(-180, 180), is_spatial_level=True)
 
     def apply_operation(self, input, value):
         return F.rotate(input, angle=value)
