@@ -17,7 +17,7 @@ policy_model:
   # randomly chooses one sub-policy and uses augmentations from that sub-policy to transform an input image. A larger
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
   # augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
-  # space of augmentations, so you need more training data for policy to find good augmentation policies.
+  # space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
   num_sub_policies: 20
 
   # Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
@@ -111,10 +111,10 @@ optim:
   # Number of epochs to search parameters of augmentations.
   epochs:  20
 
-  # Learning rate for the `main` model (which consists of classifier and discriminator).
+  # Learning rate for Classification Model.
   main_lr: 1e-3
 
-  # Learning rate for the `policy` model (which is used to generate augmented images).
+  # Learning rate for Policy Model.
   policy_lr: 1e-3
 
 # Device that will keep PyTorch Tensors and which will be used for training. Please refer to the PyTorch documentation

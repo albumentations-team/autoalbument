@@ -114,7 +114,7 @@ To search for augmentation policies, run `autoalbument-search --config-dir </pat
 AutoAlbument uses PyTorch to search for augmentation policies. You can speed up the search by using a CUDA-capable GPU.
 
 ### 5. Use found augmentation policies in your training pipeline.
-You can use a JSON file with a policy to create an augmentation pipeline [Albumentations](https://github.com/albumentations-team/albumentations):
+You can use a JSON file with a policy to create an augmentation pipeline with [Albumentations](https://github.com/albumentations-team/albumentations):
 
 ```
 import albumentations as A
