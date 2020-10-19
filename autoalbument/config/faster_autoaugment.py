@@ -29,8 +29,8 @@ class DataConfig:
 @dataclass
 class OptimConfig:
     epochs: int = 20
-    main_lr: float = 1e-3
-    policy_lr: float = 1e-3
+    main: Any = MISSING
+    policy: Any = MISSING
 
 
 @dataclass

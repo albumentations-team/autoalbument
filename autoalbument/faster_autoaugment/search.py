@@ -13,6 +13,7 @@ import albumentations as A
 import timm
 import torch
 from albumentations.pytorch import ToTensorV2
+from hydra.utils import instantiate
 from torch import Tensor, nn
 from torch.nn import Flatten
 from torch.optim import Adam
@@ -163,16 +164,8 @@ class FasterAutoAugmentBase:
 
     def create_optimizers(self):
         optimizer_config = self.cfg.optim
-        main_optimizer = Adam(
-            self.models["main"].parameters(),
-            lr=optimizer_config.main_lr,
-            betas=(0, 0.999),
-        )
-        policy_optimizer = Adam(
-            self.models["policy"].parameters(),
-            lr=optimizer_config.policy_lr,
-            betas=(0, 0.999),
-        )
+        main_optimizer = instantiate(optimizer_config.main, params=self.models["main"].parameters())
+        policy_optimizer = instantiate(optimizer_config.policy, params=self.models["policy"].parameters())
         return {
             "main": main_optimizer,
             "policy": policy_optimizer,
@@ -258,7 +251,6 @@ class FasterAutoAugmentBase:
 
     def train_step(self, input, target):
         b = input.size(0) // 2
-        target.requires_grad_(False)
         a_input, a_target = input[:b], target[:b]
         n_input, n_target = input[b:], target[b:]
         loss, d_loss, a_loss = self.wgan_loss(n_input, n_target, a_input, a_target)
