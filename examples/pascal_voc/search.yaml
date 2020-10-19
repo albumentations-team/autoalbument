@@ -113,9 +113,11 @@ data:
   # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
   # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
+    _target_: torch.utils.data.DataLoader
     batch_size: 64
     shuffle: True
     num_workers: 4
+    pin_memory: True
 
 optim:
   # Number of epochs to search parameters of augmentations.

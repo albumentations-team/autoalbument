@@ -159,7 +159,7 @@ class FasterAutoAugmentBase:
         dataset_cls = get_dataset_cls(self.cfg.data.dataset_file)
         transform = self.create_preprocessing_transform()
         dataset = dataset_cls(transform=transform)
-        dataloader = torch.utils.data.DataLoader(dataset, **self.cfg.data.dataloader)
+        dataloader = instantiate(self.cfg.data.dataloader, dataset=dataset)
         return dataloader
 
     def create_optimizers(self):

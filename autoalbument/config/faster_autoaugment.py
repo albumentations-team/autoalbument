@@ -20,7 +20,7 @@ class DataloaderConfig:
 @dataclass
 class DataConfig:
     normalization: NormalizationConfig
-    dataloader: DataloaderConfig
+    dataloader: Any = MISSING
     preprocessing: Optional[Any] = None
     dataset_file: str = "dataset.py"
     input_dtype: str = "uint8"
