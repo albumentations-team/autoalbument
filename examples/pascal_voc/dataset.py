@@ -55,20 +55,18 @@ VOC_COLORMAP = [
 
 class SearchDataset(VOCSegmentation):
     def __init__(self, image_set="train", transform=None):
-        super().__init__(root="~/data/pascal_voc", image_set=image_set, download=False, transform=transform)
+        super().__init__(root="~/data/pascal_voc", image_set=image_set, download=True, transform=transform)
 
     @staticmethod
     def _convert_to_segmentation_mask(mask):
-        # This function converts mask from the Pascal VOC format to the format requires by AutoAlbument.
+        # This function converts a mask from the Pascal VOC format to the format required by AutoAlbument.
         #
         # Pascal VOC uses an RGB image to encode the segmentation mask for that image. RGB values of a pixel
         # encode the pixel's class.
         #
-        # AutoAlbument requires a segmentation mask to be a NumPy array with
-        # the shape [height, width, num_classes]. Each channel in this mask should encode values for a single class.
-        # Pixel in a mask channel should have a value of 1.0 if the pixel of the image belongs to this class
-        # and 0.0 otherwise.
-
+        # AutoAlbument requires a segmentation mask to be a NumPy array with the shape [height, width, num_classes].
+        # Each channel in this mask should encode values for a single class. Pixel in a mask channel should have
+        # a value of 1.0 if the pixel of the image belongs to this class and 0.0 otherwise.
         height, width = mask.shape[:2]
         segmentation_mask = np.zeros((height, width, len(VOC_COLORMAP)), dtype=np.float32)
         for label_index, label in enumerate(VOC_COLORMAP):
