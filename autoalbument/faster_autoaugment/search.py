@@ -16,7 +16,6 @@ from albumentations.pytorch import ToTensorV2
 from hydra.utils import instantiate
 from torch import Tensor, nn
 from torch.nn import Flatten
-from torch.optim import Adam
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
