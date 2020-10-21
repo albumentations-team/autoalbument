@@ -11,7 +11,7 @@ from tests.utils import set_seed, calculate_sha256
     ["task", "policy_file_hash"],
     [
         ["classification", "404eb2372cc0a044286abdaf2e458f2ce2370836b01cd1513842955f58b528a8"],
-        ["semantic_segmentation", "2236c8f58e203291d6b95fd5d9946202ce436bc79dc56207b7d79d052bc07c92"],
+        ["semantic_segmentation", "94b29bd4fde4d08fb2e4ca90bf045c6d0b9611e06c95951c679be43711a13766"],
     ],
 )
 def test_e2e(tmpdir, task, policy_file_hash) -> None:
