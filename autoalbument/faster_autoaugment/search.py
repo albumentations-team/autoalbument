@@ -106,13 +106,16 @@ class FasterAutoAugmentBase:
     def create_directories(self):
         policy_dir = Path.cwd() / "policy"
         policy_dir.mkdir(exist_ok=True)
-        checkpoints_dir = Path.cwd() / "checkpoints"
-        checkpoints_dir.mkdir(exist_ok=True)
+        if self.cfg.save_checkpoints:
+            checkpoints_dir = Path.cwd() / "checkpoints"
+            checkpoints_dir.mkdir(exist_ok=True)
+        else:
+            checkpoints_dir = None
         return {
             "policy_dir": policy_dir,
             "checkpoints_dir": checkpoints_dir,
             "latest_policy_path": policy_dir / "latest.json",
-            "latest_checkpoint_path": checkpoints_dir / "latest.pth",
+            "latest_checkpoint_path": checkpoints_dir / "latest.pth" if checkpoints_dir is not None else None,
         }
 
     def get_latest_policy_save_path(self):
