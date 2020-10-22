@@ -1,6 +1,7 @@
 task: classification
 
 policy_model:
+  task_factor: 0.1
   gp_factor: 10
   temperature: 0.05
   num_sub_policies: 10
@@ -9,7 +10,6 @@ policy_model:
 
 
 classification_model:
-  task_factor: 0.1
   num_classes: 10
   architecture: resnet18
   pretrained: False

@@ -85,7 +85,6 @@ class FasterAutoAugmentBase:
         self.metric_tracker = self.create_metric_tracker()
         self.paths = self.create_directories()
         self.tensorboard_writer = self.create_tensorboard_writer()
-        self.task_factor = self.get_task_factor()
         self.epoch = None
         if self.cfg.checkpoint_path:
             self.load_checkpoint()
@@ -222,7 +221,7 @@ class FasterAutoAugmentBase:
         self.models["main"].requires_grad_(True)
         self.models["main"].zero_grad()
         output, n_output = self.models["main"](n_input)
-        loss = self.task_factor * self.loss(output, n_target)
+        loss = self.cfg.policy_model.task_factor * self.loss(output, n_target)
         loss.backward(retain_graph=True)
         d_n_loss = n_output.mean()
         d_n_loss.backward(-ones)
@@ -244,7 +243,7 @@ class FasterAutoAugmentBase:
         augmented_input, maybe_augmented_target = self.policy_forward_for_policy_train(a_input, a_target)
 
         _output, a_output = self.models["main"](augmented_input)
-        _loss = self.task_factor * self.loss(_output, maybe_augmented_target)
+        _loss = self.cfg.policy_model.task_factor * self.loss(_output, maybe_augmented_target)
         _loss.backward(retain_graph=True)
         a_loss = a_output.mean()
         a_loss.backward(-ones)
@@ -392,9 +391,6 @@ class FAAClassification(FasterAutoAugmentBase):
         output = self.models["policy"]({"image_batch": a_input})["image_batch"]
         return output, a_target
 
-    def get_task_factor(self):
-        return self.cfg.classification_model.task_factor
-
 
 class FAASemanticSegmentation(FasterAutoAugmentBase):
     def create_main_model(self):
@@ -413,9 +409,6 @@ class FAASemanticSegmentation(FasterAutoAugmentBase):
     def policy_forward_for_policy_train(self, a_input, a_target):
         output = self.models["policy"]({"image_batch": a_input, "mask_batch": a_target})
         return output["image_batch"], output["mask_batch"]
-
-    def get_task_factor(self):
-        return self.cfg.semantic_segmentation_model.task_factor
 
 
 def get_faa_seacher(cfg):

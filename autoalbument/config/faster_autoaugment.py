@@ -35,6 +35,7 @@ class OptimConfig:
 
 @dataclass
 class PolicyModelConfig:
+    task_factor: float = 0.1
     gp_factor: float = 10
     temperature: float = 0.05
     num_sub_policies: int = 150
@@ -47,7 +48,6 @@ class ClassificationModelConfig:
     num_classes: int = MISSING
     architecture: str = "resnet18"
     pretrained: bool = False
-    task_factor: float = 0.1
 
 
 @dataclass
@@ -56,7 +56,6 @@ class SemanticSegmentationModelConfig:
     architecture: str = "Unet"
     encoder_architecture: str = "resnet18"
     pretrained: bool = False
-    task_factor: float = 0.1
 
 
 @dataclass
