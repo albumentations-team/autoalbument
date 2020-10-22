@@ -1,15 +1,16 @@
 # AutoAlbument
 
-AutoAlbument is an AutoML tool that learns augmentation policies from data. You can apply discovered policies with [Albumentations](https://github.com/albumentations-team/albumentations), an image augmentation library. For now, classification and semantic segmentation tasks are supported.
+AutoAlbument is an AutoML tool that learns image augmentation policies from data. It relieves the user from manually selecting augmentations and tuning their parameters. AutoAlbument provides a complete ready-to-use configuration for an augmentation pipeline.
 
+AutoAlbument supports image classification and semantic segmentation tasks.
 
 ## Table of contents
 - [Installation](#installation)
 - [Usage](#usage)
 - [Search algorithms](#search-algorithms)
+- [Tuning the search parameters](#tuning-the-search-parameters)
 - [Examples](#examples)
 - [FAQ](#faq)
-
 
 ## Installation
 AutoAlbument requires Python 3.6 or higher. To install the library:
@@ -26,84 +27,18 @@ Note: for now, AutoAlbument uses features that are available only in this branch
   - A value for the `--task` option should contain the name of a deep learning task. Supported values are `classification` and `semantic_segmentation`.
  - A value for the `--num-classes` option should contain the number of distinct classes in the classification or segmentation dataset.
 
-### 2. Add implementation for `__len__` and `__getitem__` methods in dataset.py.
+### 2. Add implementation for `__len__` and `__getitem__` methods in `dataset.py`.
 
-The `dataset.py` file created at step 1 by `autoalbument-create` contains stubs for implementing a PyTorch dataset (you can read more about creating custom PyTorch datasets [here](https://pytorch.org/tutorials/beginner/data_loading_tutorial.html)).
+The `dataset.py` file created at step 1 by `autoalbument-create` contains stubs for implementing a PyTorch dataset (you can read more about creating custom PyTorch datasets [here](https://pytorch.org/tutorials/beginner/data_loading_tutorial.html)). You need to add implementation for for `__len__` and `__getitem__` methods (and optionally add the initialization logic if required).
 
-#### An example dataset stub for a classification task:
-
-```
-class SearchDataset(torch.utils.data.Dataset):
-    def __init__(self, transform=None):
-        self.transform = transform
-        # Implement additional initialization logic if needed
-
-    def __len__(self):
-        # Replace `...` with the actual implementation
-        ...
-
-    def __getitem__(self, index):
-        # Implement logic to get an image and its label using the received index.
-        #
-        # `image` should be a NumPy array with the shape [height, width, num_channels].
-        # If an image contains three color channels, it should use an RGB color scheme.
-        #
-        # `label` should be an integer in the range [0, model.num_classes - 1] where `model.num_classes`
-        # is a value set in the `search.yaml` file.
-
-        image = ...
-        label = ...
-
-        if self.transform is not None:
-            transformed = self.transform(image=image)
-            image = transformed["image"]
-
-        return image, label
-```
-
-#### An example dataset stub for a semantic segmentation task:
-
-```
-import torch.utils.data
-
-
-class SearchDataset(torch.utils.data.Dataset):
-
-    def __init__(self, transform=None):
-        self.transform = transform
-        # Implement additional initialization logic if needed
-
-    def __len__(self):
-        # Replace `...` with the actual implementation
-        ...
-
-    def __getitem__(self, index):
-        # Implement logic to get an image and its mask using the received index.
-        #
-        # `image` should be a NumPy array with the shape [height, width, num_channels].
-        # If an image contains three color channels, it should use an RGB color scheme.
-        #
-        # `mask` should be a NumPy array with the shape [height, width, num_classes] where `num_classes`
-        # is a value set in the `search.yaml` file. Each mask channel should encode values for a single class (usually
-        # pixel in that channel has a value of 1.0 if the corresponding pixel from the image belongs to this class and
-        # 0.0 otherwise). During augmentation search, `nn.BCEWithLogitsLoss` is used as a segmentation loss.
-
-        image = ...
-        mask = ...
-
-        if self.transform is not None:
-            transformed = self.transform(image=image, mask=mask)
-            image = transformed["image"]
-            mask = transformed["mask"]
-        return image, mask
-```
+A dataset for a classification task should return an image and a class label. A dataset for a segmentation task should return an image and an associated mask.
 
 ### 3. \[Optional\] Adjust search parameters in `search.yaml`.
-You may want to change parameters that AutoAlbument will use to search for augmentation policies. To do this, you need to edit the `search.yaml` file created by `autoalbument-create` at step 1. Each configuration parameter contains a comment that describes the meaning of the setting.
+You may want to change parameters that AutoAlbument will use to search for augmentation policies. To do this, you need to edit the `search.yaml` file created by `autoalbument-create` at step 1. Each configuration parameter contains a comment that describes the meaning of the setting. Please refer to the  "Tuning the search parameters" section that includes a description of the most critical parameters.
 
 `search.yaml` is a [Hydra](https://hydra.cc/) config file. You can use all Hydra features inside it.
 
-### 4. Run the search for augmentation policies.
+### 4. Run a search for augmentation policies.
 
 To search for augmentation policies, run `autoalbument-search --config-dir </path/to/directory>`, e.g. `autoalbument-search --config-dir ~/experiments/autoalbument-search-cifar10`. The value of `--config-dir` should be the same value that was passed to `autoalbument-create` at step 1.
 
@@ -114,26 +49,70 @@ To search for augmentation policies, run `autoalbument-search --config-dir </pat
 AutoAlbument uses PyTorch to search for augmentation policies. You can speed up the search by using a CUDA-capable GPU.
 
 ### 5. Use found augmentation policies in your training pipeline.
-You can use a JSON file with a policy to create an augmentation pipeline with [Albumentations](https://github.com/albumentations-team/albumentations):
+AutoAlbument produces a JSON file that contains a configuration for an augmentation pipeline. You can load that JSON file with [Albumentations](https://github.com/albumentations-team/albumentations):
 
 ```
 import albumentations as A
-
 transform = A.load("/path/to/policy.json")
 ```
 
-You can read more about using Albumentation for augmentation in [this article](https://albumentations.ai/docs/getting_started/image_augmentation/).
+Then you can use the created augmentation pipeline to augment the input data.
+
+For example, to augment an image for a classification task:
+
+```
+transformed = transform(image=image)
+transformed_image = transformed["image"]
+```
+
+To augment an image and a mask for a semantic segmentation task:
+```
+transformed = transform(image=image, mask=mask)
+transformed_image = transformed["image"]
+transformed_mask = transformed["mask"]
+```
+
+You can read more about using Albumentations for augmentation in those articles [Image augmentation for classification](https://albumentations.ai/docs/getting_started/image_augmentation/),
+[Mask augmentation for segmentation](https://albumentations.ai/docs/getting_started/mask_augmentation/).
+
+Refer to [this section of the documentation](https://albumentations.ai/docs/#examples-of-how-to-use-albumentations-with-different-deep-learning-frameworks) to get examples of how to use Albumentations with PyTorch and TensorFlow 2.
 
 
 ## Search algorithms
 
-### Faster AutoAugment
-"Faster AutoAugment: Learning Augmentation Strategies using Backpropagation"  by Ryuichiro Hataya, Jan Zdenek, Kazuki Yoshizoe, and Hideki Nakayama. [Paper](https://arxiv.org/abs/1911.06987) | [Original implementation](https://github.com/moskomule/dda/tree/master/faster_autoaugment)
+AutoAlbument uses the following algorithms to search for augmentation policies.
 
+### Faster AutoAugment
+"Faster AutoAugment: Learning Augmentation Strategies using Backpropagation" by Ryuichiro Hataya, Jan Zdenek, Kazuki Yoshizoe, and Hideki Nakayama. [Paper](https://arxiv.org/abs/1911.06987) | [Original implementation](https://github.com/moskomule/dda/tree/master/faster_autoaugment)
+
+## Tuning the search parameters
+
+`search.yaml` contains parameters for the search of augmentation policies. Here is an [example `search.yaml`](examples/cifar10/search.yaml) for image classification on the CIFAR-10 dataset, and here is an [example `search.yaml`](examples/pascal_voc/search.yaml) for semantic segmentation on the Pascal VOC dataset.
+
+#### Task-specific model
+A task-specific model is a model that classifies images for a classification task or outputs masks for a semantic segmentation task. Settings for a task-specific model are defined by either `classification_model` or `semantic_segmentation_model` depending on a selected task. Ideally, you should select the same model (the same architecture and the same pretrained weights) that you will use in an actual task. AutoAlbument uses models from [PyTorch Image Models](https://github.com/rwightman/pytorch-image-models/) and [Segmentation models](https://github.com/qubvel/segmentation_models.pytorch) packages for classification and semantic segmentation respectively.
+
+
+#### Base PyTorch parameters.
+
+You may want to adjust the following parameters for a PyTorch pipeline:
+- `data.dataloader` parameters such as batch_size and `num_workers`
+- Number of epochs to search for best augmentation policies in `optim.epochs`.
+- Learning rate for optimizers in `optim.main.lr` and `optim.policy.lr`.
+
+#### Parameters for the augmentations search.
+Those parameters are defined in `policy_model`. You may want to tune the following ones:
+- `num_sub_policies` - number of distinct augmentation sub-policies. A random sub-policy is selected in each iteration, and that sub-policy is applied to input data. The larger number of sub-policies will produce a more diverse set of augmentations. On the other side, the more sub-policies you have, the more time and data you need to tune those sub-policies correctly.
+- `num_chunks` controls the balance between speed and diversity of augmentations in a search phase. Each batch is split-up into `num_chunks` chunks, and then a random sub-policy is applied to each chunk separately. The larger the value of `num_chunks` helps to learn augmentation policies better but simultaneously increases the searching time. Authors of FasterAutoAugment used such values for `num_chunks` that each chunk consisted of 8 to 16 images.
+- `operation_count` - the number of augmentation operations that will be applied to each input data instance. For example, `operation_count: 1` means that only one operation will be applied to an input image/mask, and `operation_count: 4` means that four sequential operations will be applied to each input image/mask. The larger number of operations produces a more diverse set of augmentations but simultaneously increases the searching time.
+
+#### Preprocessing transforms
+If images have different sizes or you want to train a model on image patches, you could define preprocessing transforms (such as Resizing, Cropping, and Padding) in `data.preprocessing`. Those transforms will always be applied to all input data. Found augmentation policies will also contain those preprocessing transforms.
+
+Note that it is crucial for Policy Model (a model that searches for augmentation parameters) to receive images of the same size that will be used during the training of an actual model. For some augmentations, parameters depend on input data's height and width (for example, hole sizes for the Cutout augmentation).
 
 ## Examples
 The [`examples`](examples/) directory contains example configs for different tasks and datasets.
-
 
 ## FAQ
 
