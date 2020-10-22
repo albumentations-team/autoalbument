@@ -5,6 +5,7 @@ https://github.com/moskomule/dda/blob/master/faster_autoaugment/policy.py
 
 import random
 from copy import deepcopy
+from typing import Dict
 
 import albumentations as A
 import torch
@@ -40,7 +41,7 @@ class SubPolicyStage(nn.Module):
         self._weights = nn.Parameter(torch.ones(len(self.operations)))
         self.temperature = temperature
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: Dict[str, Tensor]) -> Dict[str, Tensor]:
         targets = input.keys()
         operation_outputs = [op(input) for op in self.operations]
         output = {}
@@ -78,7 +79,7 @@ class SubPolicy(nn.Module):
         super().__init__()
         self.stages = nn.ModuleList([deepcopy(sub_policy_stage) for _ in range(operation_count)])
 
-    def forward(self, input: Tensor) -> Tensor:
+    def forward(self, input: Dict[str, Tensor]) -> Dict[str, Tensor]:
         for stage in self.stages:
             input = stage(input)
         return input
@@ -136,7 +137,7 @@ class Policy(nn.Module):
         output["image_batch"] = self.normalize_(output["image_batch"])
         return output
 
-    def _forward(self, input: Tensor) -> Tensor:
+    def _forward(self, input: Dict[str, Tensor]) -> Dict[str, Tensor]:
         index = random.randrange(self.num_sub_policies)
         return self.sub_policies[index](input)
 
