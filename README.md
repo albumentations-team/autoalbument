@@ -1,6 +1,6 @@
 # AutoAlbument
 
-AutoAlbument is an AutoML tool that learns image augmentation policies from data. It relieves the user from manually selecting augmentations and tuning their parameters. AutoAlbument provides a complete ready-to-use configuration for an augmentation pipeline.
+AutoAlbument is an AutoML tool that learns image augmentation policies from data using the [Faster AutoAugment algorithm](https://arxiv.org/abs/1911.06987). It relieves the user from manually selecting augmentations and tuning their parameters. AutoAlbument provides a complete ready-to-use configuration for an augmentation pipeline.
 
 AutoAlbument supports image classification and semantic segmentation tasks.
 
