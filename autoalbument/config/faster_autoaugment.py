@@ -19,7 +19,7 @@ class DataloaderConfig:
 
 @dataclass
 class DataConfig:
-    normalization: NormalizationConfig
+    normalization: NormalizationConfig = NormalizationConfig()
     dataloader: Any = MISSING
     preprocessing: Optional[Any] = None
     dataset_file: str = "dataset.py"
@@ -60,9 +60,8 @@ class SemanticSegmentationModelConfig:
 
 @dataclass
 class FasterAutoAugmentSearchConfig:
-    policy_model: PolicyModelConfig
-    data: DataConfig
-    optim: OptimConfig
+    policy_model: PolicyModelConfig = PolicyModelConfig()
+    optim: OptimConfig = OptimConfig(main=MISSING, policy=MISSING)
     device: str = "cuda"
     task: str = MISSING
     cudnn_benchmark: bool = True
@@ -71,3 +70,4 @@ class FasterAutoAugmentSearchConfig:
     tensorboard_logs_dir: Optional[str] = None
     classification_model: Optional[ClassificationModelConfig] = None
     semantic_segmentation_model: Optional[SemanticSegmentationModelConfig] = None
+    data: DataConfig = DataConfig(dataloader=MISSING)
