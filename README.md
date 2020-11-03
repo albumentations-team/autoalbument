@@ -13,12 +13,17 @@ AutoAlbument supports image classification and semantic segmentation tasks.
 - [FAQ](#faq)
 
 ## Installation
-AutoAlbument requires Python 3.6 or higher. To install the library:
-- Clone the repository: `git clone git@github.com:albumentations-team/autoalbument.git`.
-- Install the library: `pip install -e autoalbument/`.
+AutoAlbument requires Python 3.6 or higher.
 
-Note: for now, AutoAlbument uses features that are available only in this branch of Albumentations: [https://github.com/albumentations-team/albumentations/tree/updated_transforms](https://github.com/albumentations-team/albumentations/tree/updated_transforms)
+#### PyPI
+To install the latest stable version from PyPI:
 
+`pip install -U autoalbument`
+
+#### GitHub
+To install the latest version from GitHub:
+
+`pip install -U git+https://github.com/albumentations-team/autoalbument`
 
 ## Usage
 ### 1. Create a directory with configuration files.

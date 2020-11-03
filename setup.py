@@ -16,7 +16,7 @@ setup(
     name="autoalbument",
     version=get_version(),
     install_requires=[
-        "albumentations @ https://github.com/albumentations-team/albumentations/archive/updated_transforms.zip#egg=albumentations-0.5.1",  # noqa: E501
+        "albumentations>=0.5.1",
         "torch>=1.6.0",
         "hydra-core>=1.0",
         "timm==0.1.20",  # This version is required for segmentation-models-pytorch
