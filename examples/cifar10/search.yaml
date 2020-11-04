@@ -108,6 +108,7 @@ data:
     shuffle: True
     num_workers: 4
     pin_memory: True
+    drop_last: True
 
 optim:
   # Number of epochs to search parameters of augmentations.

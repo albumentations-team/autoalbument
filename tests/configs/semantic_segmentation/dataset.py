@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch.utils.data
 
@@ -7,7 +9,7 @@ class SearchDataset(torch.utils.data.Dataset):
         self.transform = transform
 
     def __len__(self):
-        return 16
+        return int(os.environ.get("AUTOALBUMENT_TEST_DATASET_LENGTH", 16))
 
     def __getitem__(self, index):
         np.random.seed(index)

@@ -30,3 +30,12 @@ def test_e2e(tmpdir, task, policy_file_hash) -> None:
         with expected_policy_file.open() as f:
             expected_policy = json.load(f)["transform"]
         assert policy == expected_policy
+
+
+def test_dataloader_drops_last(tmpdir) -> None:
+    with initialize(config_path="./configs/classification"):
+        os.environ["AUTOALBUMENT_TEST_DATASET_LENGTH"] = "17"
+        os.chdir(tmpdir)
+        cfg = compose(config_name="search", overrides=["data.dataloader.batch_size=12"])
+        faa_searcher = get_faa_seacher(cfg)
+        faa_searcher.search()

@@ -34,6 +34,7 @@ data:
     shuffle: True
     num_workers: 0
     pin_memory: False
+    drop_last: True
 
 optim:
   epochs: 1
