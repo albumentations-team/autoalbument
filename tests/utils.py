@@ -1,4 +1,3 @@
-import hashlib
 import random
 
 import torch
@@ -23,14 +22,3 @@ def set_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
-
-
-def calculate_sha256(filepath, buf_size=65536):
-    sha256_hash = hashlib.sha256()
-    with filepath.open("rb") as f:
-        while True:
-            data = f.read(buf_size)
-            if not data:
-                break
-            sha256_hash.update(data)
-    return sha256_hash.hexdigest()
