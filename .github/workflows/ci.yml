@@ -2,6 +2,17 @@ name: CI
 on: [push, pull_request]
 
 jobs:
+  run_e2e_tests:
+    name: Run E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build Docker Image for E2E tests
+        run: docker build -t autoalbument_e2e_tests:latest -f tests_e2e/Dockerfile .
+      - name: Run E2E tests
+        run: docker run --rm autoalbument_e2e_tests:latest
+
   test_and_lint:
     name: Test and lint
     runs-on: ${{ matrix.operating-system }}
@@ -29,17 +40,6 @@ jobs:
       run: flake8
     - name: Run mypy
       run: mypy .
-
-  run_e2e_tests:
-    name: Run E2E tests
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Build Docker Image for E2E tests
-      run: docker build -t autoalbument_e2e_tests:latest -f tests_e2e/Dockerfile .
-    - name: Run E2E tests
-      run: docker run --rm -it autoalbument_e2e_tests:latest
 
   check_code_formatting:
     name: Check code formatting with Black
