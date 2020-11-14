@@ -2,17 +2,6 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  run_e2e_tests:
-    name: Run E2E tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Build Docker Image for E2E tests
-        run: docker build -t autoalbument_e2e_tests:latest -f tests_e2e/Dockerfile .
-      - name: Run E2E tests
-        run: docker run --rm autoalbument_e2e_tests:latest
-
   test_and_lint:
     name: Test and lint
     runs-on: ${{ matrix.operating-system }}
@@ -25,7 +14,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up Python
-      uses: actions/setup-python@v1.1.1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Update pip
@@ -51,7 +40,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up Python
-      uses: actions/setup-python@v1.1.1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Update pip
