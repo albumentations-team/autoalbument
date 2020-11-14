@@ -5,6 +5,9 @@ class SearchDataset(torchvision.datasets.CIFAR10):
     def __init__(self, transform=None):
         super().__init__(root="~/data/cifar10", train=True, download=True, transform=transform)
 
+    def __len__(self):
+        return 20
+
     def __getitem__(self, index):
         image, label = self.data[index], self.targets[index]
 

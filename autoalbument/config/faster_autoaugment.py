@@ -22,7 +22,8 @@ class DataConfig:
     normalization: NormalizationConfig = NormalizationConfig()
     dataloader: Any = MISSING
     preprocessing: Optional[Any] = None
-    dataset_file: str = "dataset.py"
+    dataset_file: Optional[Any] = None
+    dataset: Optional[Any] = None
     input_dtype: str = "uint8"
 
 
@@ -71,3 +72,4 @@ class FasterAutoAugmentSearchConfig:
     classification_model: Optional[ClassificationModelConfig] = None
     semantic_segmentation_model: Optional[SemanticSegmentationModelConfig] = None
     data: DataConfig = DataConfig(dataloader=MISSING)
+    seed: Optional[int] = None

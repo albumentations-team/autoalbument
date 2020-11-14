@@ -1,6 +1,8 @@
 import importlib.util
 from collections import defaultdict
+import random
 
+import numpy as np
 import torch
 
 from autoalbument.utils.hydra import get_dataset_filepath
@@ -42,3 +44,9 @@ class MetricTracker:
 
 def target_requires_grad(target):
     return target == "image_batch"
+
+
+def set_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)

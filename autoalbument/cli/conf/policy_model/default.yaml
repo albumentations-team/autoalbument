@@ -1,0 +1,37 @@
+# @package _group_
+
+# Multiplier for classification loss of a model. Faster AutoAugment uses classification loss to prevent augmentations
+# from transforming images of a particular class to another class. The authors of Faster AutoAugment use 0.1 as
+# default value.
+task_factor: 0.1
+
+# Multiplier for the gradient penalty for WGAN-GP training. 10 is the default value that was proposed in
+# `Improved Training of Wasserstein GANs`.
+gp_factor: 10
+
+# Temperature for Relaxed Bernoulli distribution. The probability of applying a certain augmentation is sampled from
+# Relaxed Bernoulli distribution (because Bernoulli distribution is not differentiable). With lower values of
+# `temperature` Relaxed Bernoulli distribution behaves like Bernoulli distribution. In the paper, the authors
+# of Faster AutoAugment used 0.05 as a default value for `temperature`.
+temperature: 0.05
+
+# Number of augmentation sub-policies. When an image passes through an augmentation pipeline, Faster AutoAugment
+# randomly chooses one sub-policy and uses augmentations from that sub-policy to transform an input image. A larger
+# number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
+# augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
+# space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
+num_sub_policies: 40
+
+# Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
+# applies the same sub-policy with the same parameters to each image in a chunk. This parameter controls the tradeoff
+# between the speed of augmentation search and diversity of augmentations. Larger `num_chunks` values will lead to
+# faster searching but less diverse set of augmentations. Note that this parameter is used only in the searching
+# phase. When you train a model with found sub-policies, Albumentations will apply a distinct set of transformations
+# to each image separately.
+num_chunks: 4
+
+# Number of consecutive augmentations in each sub-policy. Faster AutoAugment will sequentially apply `operation_count`
+# augmentations from a sub-policy to an image. Larger values of `operation_count` lead to better performance of
+# a model trained on augmented images. Simultaneously, larger values of `operation_count` affect the speed of search
+# and increase the searching time.
+operation_count: 4

@@ -2,6 +2,6 @@ include LICENSE
 include README.md
 
 graft tests
-graft autoalbument/faster_autoaugment/templates
+graft autoalbument/cli/templates
 
 global-exclude *.py[co] .DS_Store

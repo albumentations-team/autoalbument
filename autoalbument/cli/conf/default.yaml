@@ -1,0 +1,21 @@
+# @package _global_
+
+# Device that will  Tensors and which will be used for training. Please refer to the PyTorch documentation
+# for more information -  https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device.
+device: cuda
+
+# Value for torch.backends.cudnn.benchmark
+# https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
+cudnn_benchmark: True
+
+# If set to `True` AutoAlbument will save a checkpoint that contains states of models and optimizers at the end of each
+# epoch. Checkpoints will be saved to the directory `<working directory>/checkpoints`.
+save_checkpoints: False
+
+# Path to a PyTorch checkpoint that contains saved states of models and optimizers. The value should be an absolute path
+# to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
+checkpoint_path: null
+
+# Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
+# this feature.
+tensorboard_logs_dir: null

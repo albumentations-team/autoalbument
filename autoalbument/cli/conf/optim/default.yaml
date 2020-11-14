@@ -1,0 +1,16 @@
+# @package _group_
+
+# Number of epochs to search for parameters of augmentations
+epochs: 20
+
+# Optimizer configuration for Classification Model
+main:
+  _target_: torch.optim.Adam
+  lr: 1e-3
+  betas: [0, 0.999]
+
+# Optimizer configuration for Policy Model
+policy:
+  _target_: torch.optim.Adam
+  lr: 1e-3
+  betas: [0, 0.999]

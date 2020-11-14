@@ -20,7 +20,7 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from autoalbument.faster_autoaugment.metrics import get_average_parameter_change
-from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, get_dataset_cls, MetricTracker
+from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, get_dataset_cls, MetricTracker, set_seed
 from autoalbument.utils.files import symlink
 from autoalbument.faster_autoaugment.policy import Policy
 import segmentation_models_pytorch as smp
@@ -78,6 +78,7 @@ class FasterAutoAugmentBase:
         self.cfg = cfg
         torch.backends.cudnn.benchmark = self.cfg.cudnn_benchmark
         self.start_epoch = 1
+        self.set_seed()
         self.dataloader = self.create_dataloader()
         self.models = self.create_models()
         self.optimizers = self.create_optimizers()
@@ -89,6 +90,11 @@ class FasterAutoAugmentBase:
         if self.cfg.checkpoint_path:
             self.load_checkpoint()
         self.saved_policy_state_dict = self.get_policy_state_dict()
+
+    def set_seed(self):
+        seed = getattr(self.cfg, "seed", None)
+        if seed is not None:
+            set_seed(seed)
 
     def create_tensorboard_writer(self):
         if self.cfg.tensorboard_logs_dir:
@@ -157,9 +163,18 @@ class FasterAutoAugmentBase:
         return transform
 
     def create_dataloader(self):
-        dataset_cls = get_dataset_cls(self.cfg.data.dataset_file)
         transform = self.create_preprocessing_transform()
-        dataset = dataset_cls(transform=transform)
+
+        data_config = self.cfg.data
+
+        if getattr(data_config, "dataset", None):
+            dataset = instantiate(data_config.dataset, transform=transform)
+        elif getattr(data_config, "dataset_file", None):
+            dataset_cls = get_dataset_cls(self.cfg.data.dataset_file)
+            dataset = dataset_cls(transform=transform)
+        else:
+            raise ValueError(f"You should provide a correct dataset in data.dataset, got {data_config.dataset}")
+
         dataloader = instantiate(self.cfg.data.dataloader, dataset=dataset)
         return dataloader
 

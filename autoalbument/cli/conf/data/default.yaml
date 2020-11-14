@@ -1,0 +1,47 @@
+# @package _group_
+
+# The data type of input images. Two values are supported:
+# - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
+#   [0, 255].
+# - float32. In that case, all input images should be NumPy arrays with the np.float32 data type and values in the
+#   range [0.0, 1.0].
+input_dtype: uint8
+
+# A list of preprocessing augmentations that will be applied to each image before applying augmentations from
+# a policy. A preprocessing augmentation should be defined as `key`: `value`, where `key` is the name of augmentation
+# from Albumentations, and `value` is a dictionary with augmentation parameters. The found policy will also apply
+# those preprocessing augmentations before applying the main augmentations.
+#
+# Here is an example of an augmentation pipeline that first pads an image to the size 512x512 pixels, then resizes
+# the resulting image to the size 256x256 pixels and finally crops a random patch with the size 224x224 pixels.
+#
+#  preprocessing:
+#    - PadIfNeeded:
+#        min_height: 512
+#        min_width: 512
+#    - Resize:
+#        height: 256
+#        width: 256
+#    - RandomCrop:
+#        height: 224
+#        width: 224
+#
+preprocessing: null
+
+# Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
+# Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
+# the normalization function will always receive a `float32` input with values in the range [0.0, 1.0], so you should
+# define `mean` and `std` values accordingly. ImageNet normalization is used by default.
+normalization:
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+
+# Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
+# https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
+dataloader:
+  _target_: torch.utils.data.DataLoader
+  batch_size: 128
+  shuffle: True
+  num_workers: 4
+  pin_memory: True
+  drop_last: True

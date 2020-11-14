@@ -23,7 +23,7 @@ from autoalbument.utils.templates import AutoAlbumentTemplate
 def main(config_dir, task, num_classes):
     config_dir = Path(config_dir)
     config_dir.mkdir(parents=True, exist_ok=True)
-    templates_dir = Path(__file__).parent.parent / "faster_autoaugment" / "templates"
+    templates_dir = Path(__file__).parent.parent / "cli" / "templates"
     dataset_file = templates_dir / task / "dataset.py.tmpl"
     search_config_file = templates_dir / task / "search.yaml.tmpl"
     dataset_file_destination = config_dir / "dataset.py"
@@ -33,7 +33,7 @@ def main(config_dir, task, num_classes):
         config = AutoAlbumentTemplate(f.read())
 
     with search_file_destination.open("w") as f:
-        f.write(config.substitute(num_classes=num_classes))
+        f.write(config.substitute(config_dir=str(Path(config_dir).resolve()), num_classes=num_classes))
 
     copyfile(dataset_file, dataset_file_destination)
 

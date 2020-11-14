@@ -1,0 +1,14 @@
+defaults:
+  # Settings for Policy Model that performs search for augmentation policies.
+  - policy_model: default
+
+  # Settings for Semantic Segmentation Model that is used for two purposes:
+  # 1. As a model that performs semantic segmentation of input images.
+  # 2. As a Discriminator for Policy Model.
+  - semantic_segmentation_model: default
+
+  - optim: default
+  - data: default
+
+  - default
+  - search
