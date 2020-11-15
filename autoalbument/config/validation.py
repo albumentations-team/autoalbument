@@ -1,7 +1,5 @@
 def validate_cfg(cfg):
     data_cfg = cfg.data
-    print((data_cfg.dataset is None), (data_cfg.dataset_file is None))
-
     if (data_cfg.dataset is None) == (data_cfg.dataset_file is None):
         raise ValueError(
             f"You should provide either data.dataset or data.dataset_file but not both. "

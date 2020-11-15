@@ -1,0 +1,49 @@
+# @package _global_
+
+task: semantic_segmentation
+
+policy_model:
+  num_sub_policies: 10
+  num_chunks: 4
+
+
+semantic_segmentation_model:
+  num_classes: 10
+  architecture: Unet
+  encoder_architecture: resnet18
+  pretrained: False
+
+
+data:
+  dataset:
+    _target_: dataset.SearchDataset
+  input_dtype: uint8
+  preprocessing:
+    - Resize:
+        height: 128
+        width: 128
+
+  dataloader:
+    _target_: torch.utils.data.DataLoader
+    batch_size: 16
+    num_workers: 0
+
+optim:
+  epochs: 1
+  main:
+    _target_: torch.optim.Adam
+    lr: 1e-3
+    betas: [0, 0.999]
+
+  policy:
+    _target_: torch.optim.Adam
+    lr: 1e-3
+    betas: [0, 0.999]
+
+device: cpu
+
+seed: 42
+
+hydra:
+  run:
+    dir: ${config_dir:}/outputs

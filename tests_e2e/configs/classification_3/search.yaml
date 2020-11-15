@@ -1,0 +1,42 @@
+# @package _global_
+
+task: classification
+
+policy_model:
+  num_sub_policies: 10
+  num_chunks: 8
+
+classification_model:
+  num_classes: 10
+  architecture: resnet18
+  pretrained: False
+
+data:
+  dataset:
+    _target_: dataset.SearchDataset
+
+  preprocessing: null
+
+  dataloader:
+    _target_: torch.utils.data.DataLoader
+    batch_size: 16
+    num_workers: 0
+
+optim:
+  epochs:  1
+  main:
+    _target_: torch.optim.Adam
+    lr: 1e-3
+    betas: [0, 0.999]
+  policy:
+    _target_: torch.optim.Adam
+    lr: 1e-3
+    betas: [0, 0.999]
+
+device: cpu
+
+seed: 42
+
+hydra:
+  run:
+    dir: ${config_dir:}/outputs
