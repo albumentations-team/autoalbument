@@ -3,5 +3,6 @@ include README.md
 
 graft tests
 graft autoalbument/cli/templates
+graft autoalbument/cli/conf
 
 global-exclude *.py[co] .DS_Store
