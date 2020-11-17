@@ -11,7 +11,7 @@ AutoAlbument requires Python 3.6 or higher. To install the latest stable version
 
 ## How to use AutoAlbument
 
-![](autoalbument_usage.png)
+![How to use AutoAlbument](https://albumentations.ai/docs/images/autoalbument/how_to_use/autoalbument_usage.png)
 
 1. You need to create a configuration file with AutoAlbument parameters and a Python file that implements a custom PyTorch Dataset for your data. Next, you need to pass those files to AutoAlbument.
 2. AutoAlbument will use Generative Adversarial Network to discover augmentation policies and then create a file containing those policies.
