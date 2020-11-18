@@ -21,6 +21,6 @@ You can read the detailed description of all steps at [https://albumentations.ai
 
 
 ## Examples
-The [`examples`](examples/) directory contains example configs for different tasks and datasets:
-- [Image classification on the CIFAR10 dataset](examples/cifar10).
-- [Semantic segmentation on the Pascal VOC dataset](examples/pascal_voc).
+The [`examples`](https://github.com/albumentations-team/autoalbument/tree/master/examples) directory contains example configs for different tasks and datasets:
+- [Image classification on the CIFAR10 dataset](https://github.com/albumentations-team/autoalbument/tree/master/examples/cifar10).
+- [Semantic segmentation on the Pascal VOC dataset](https://github.com/albumentations-team/autoalbument/tree/master/examples/pascal_voc).
