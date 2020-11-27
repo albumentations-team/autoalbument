@@ -10,6 +10,6 @@ COPY tests_e2e/requirements.txt /autoalbument/tests_e2e/requirements.txt
 RUN pip install --no-cache-dir -r /autoalbument/tests_e2e/requirements.txt
 
 COPY . .
-RUN pip install -e /autoalbument
+RUN pip install /autoalbument
 
 ENTRYPOINT ["/autoalbument/tests_e2e/run.sh"]
