@@ -1,6 +1,8 @@
 import argparse
 import os
 
+from hydra.utils import to_absolute_path
+
 
 def get_config_dir():
     parser = argparse.ArgumentParser()
@@ -9,7 +11,7 @@ def get_config_dir():
     config_dir = args.config_dir
     if config_dir is None:
         config_dir = os.environ.get("AUTOALBUMENT_CONFIG_DIR")
-    return config_dir
+    return to_absolute_path(config_dir)
 
 
 def get_dataset_filepath(dataset_file):

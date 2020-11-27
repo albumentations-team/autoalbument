@@ -19,8 +19,18 @@ test_search_from_create () {
   echo $CONFIG_DIR $TASK
   autoalbument-create --config-dir $CONFIG_DIR --task $TASK --num-classes 10
   cp $CONFIG_DIR/dataset_implementation.py $CONFIG_DIR/dataset.py
-  autoalbument-search --config-dir $CONFIG_DIR device=cpu
+  autoalbument-search --config-dir $CONFIG_DIR device=cpu semantic_segmentation_model.pretrained=False optim.epochs=1
 }
+
+test_search_from_create_relative_directory () {
+  CONFIG_DIR=./tests_e2e/configs/$1
+  TASK=$2
+  echo $CONFIG_DIR $TASK
+  autoalbument-create --config-dir $CONFIG_DIR --task $TASK --num-classes 10
+  cp $CONFIG_DIR/dataset_implementation.py $CONFIG_DIR/dataset.py
+  autoalbument-search --config-dir $CONFIG_DIR device=cpu semantic_segmentation_model.pretrained=False optim.epochs=1
+}
+
 
 test_search_from_create_full_config () {
   CONFIG_DIR=$CONFIG_BASE_DIR/$1
@@ -43,7 +53,6 @@ test_search_from_merged_create () {
   python $TOOLS_DIR/assert_policies_match.py $CONFIG_DIR/expected_policy.json $CONFIG_DIR/outputs/policy/latest.json
 }
 
-
 test_simple_search classification_1
 test_simple_search classification_2
 test_simple_search classification_3
@@ -57,6 +66,9 @@ test_search_from_merged_create semantic_segmentation_from_create_1 semantic_segm
 
 test_search_from_create classification_from_create_2 classification
 test_search_from_create semantic_segmentation_from_create_2 semantic_segmentation
+
+test_search_from_create_relative_directory classification_from_create_3 classification
+test_search_from_create_relative_directory semantic_segmentation_from_create_3 semantic_segmentation
 
 test_search_from_create_full_config classification_from_create_2_full_config classification
 test_search_from_create_full_config semantic_segmentation_from_create_2_full_config semantic_segmentation
