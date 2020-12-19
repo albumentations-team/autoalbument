@@ -10,6 +10,7 @@ policy_model:
 
 
 classification_model:
+  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
   num_classes: 10
   architecture: resnet18
   pretrained: False
