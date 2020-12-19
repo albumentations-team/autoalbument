@@ -45,6 +45,10 @@ policy_model:
 # 1. As a model that performs semantic segmentation of input images.
 # 2. As a Discriminator for Policy Model.
 semantic_segmentation_model:
+  # By default, AutoAlbument uses an instance of `autoalbument.faster_autoaugment.models.SemanticSegmentationModel` as
+  # a semantic segmentation model.
+  # This model takes four parameters: `num_classes`, `architecture`, `encoder_architecture` and `pretrained`.
+  _target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
 
   # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
   # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.

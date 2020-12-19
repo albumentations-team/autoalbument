@@ -32,7 +32,12 @@ policy_model:
 # Settings for Semantic Segmentation Model that is used for two purposes:
 # 1. As a model that performs semantic segmentation of input images.
 # 2. As a Discriminator for Policy Model.
+
 semantic_segmentation_model:
+  # By default, AutoAlbument uses an instance of `autoalbument.faster_autoaugment.models.SemanticSegmentationModel` as
+  # a semantic segmentation model.
+  # This model takes four parameters: `num_classes`, `architecture`, `encoder_architecture` and `pretrained`.
+  _target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
 
   # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
   # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.
@@ -54,6 +59,7 @@ semantic_segmentation_model:
   # - In the case of string the value should specify the name of the weights. For the list of available weights please
   #   refer to https://github.com/qubvel/segmentation_models.pytorch#encoders-
   pretrained: True
+
 
 data:
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using

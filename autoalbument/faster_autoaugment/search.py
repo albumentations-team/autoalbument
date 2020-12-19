@@ -10,67 +10,20 @@ from pathlib import Path
 from typing import Tuple
 
 import albumentations as A
-import timm
 import torch
 from albumentations.pytorch import ToTensorV2
 from hydra.utils import instantiate
 from torch import Tensor, nn
-from torch.nn import Flatten
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 from autoalbument.faster_autoaugment.metrics import get_average_parameter_change
+from autoalbument.faster_autoaugment.models import ClassificationModel, SemanticSegmentationModel
 from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, get_dataset_cls, MetricTracker, set_seed
 from autoalbument.utils.files import symlink
 from autoalbument.faster_autoaugment.policy import Policy
-import segmentation_models_pytorch as smp
 
 log = logging.getLogger(__name__)
-
-
-class ClassificationDiscriminator(nn.Module):
-    def __init__(self, architecture, pretrained, num_classes):
-        super().__init__()
-        self.base_model = timm.create_model(architecture, pretrained=pretrained)
-        self.base_model.reset_classifier(num_classes)
-        self.classifier = self.base_model.get_classifier()
-        num_features = self.classifier.in_features
-        self.discriminator = nn.Sequential(
-            nn.Linear(num_features, num_features), nn.ReLU(), nn.Linear(num_features, 1)
-        )
-
-    def forward(self, input: Tensor) -> Tuple[Tensor, Tensor]:
-        x = self.base_model.forward_features(input)
-        x = self.base_model.global_pool(x).flatten(1)
-        return self.classifier(x), self.discriminator(x).view(-1)
-
-
-class SegmentationDiscriminator(nn.Module):
-    def __init__(self, architecture, encoder_architecture, num_classes, pretrained):
-        super().__init__()
-        model = getattr(smp, architecture)
-
-        self.base_model = model(
-            encoder_architecture, encoder_weights=self._get_encoder_weights(pretrained), classes=num_classes
-        )
-        num_features = self.base_model.encoder.out_channels[-1]
-        self.base_model.classification_head = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            Flatten(),
-            nn.Linear(num_features, num_features),
-            nn.ReLU(),
-            nn.Linear(num_features, 1),
-        )
-
-    @staticmethod
-    def _get_encoder_weights(pretrained):
-        if isinstance(pretrained, bool):
-            return "imagenet" if pretrained else None
-        return pretrained
-
-    def forward(self, input: Tensor) -> Tuple[Tensor, Tensor]:
-        mask, discriminator_output = self.base_model(input)
-        return mask, discriminator_output.view(-1)
 
 
 class FasterAutoAugmentBase:
@@ -187,8 +140,14 @@ class FasterAutoAugmentBase:
             "policy": policy_optimizer,
         }
 
-    def create_main_model(self):
+    def get_main_model_cfg(self):
         raise NotImplementedError
+
+    def create_main_model(self):
+        model_cfg = self.get_main_model_cfg()
+        main_model = instantiate(model_cfg)
+        main_model = main_model.to(self.cfg.device)
+        return main_model
 
     def create_policy_model(self):
         policy_model_cfg = self.cfg.policy_model
@@ -239,6 +198,7 @@ class FasterAutoAugmentBase:
         loss = self.cfg.policy_model.task_factor * self.loss(output, n_target)
         loss.backward(retain_graph=True)
         d_n_loss = n_output.mean()
+
         d_n_loss.backward(-ones)
 
         with torch.no_grad():
@@ -247,6 +207,7 @@ class FasterAutoAugmentBase:
 
         _, a_output = self.models["main"](augmented)
         d_a_loss = a_output.mean()
+
         d_a_loss.backward(ones)
         gp = self.cfg.policy_model.gp_factor * self.gradient_penalty(n_input, augmented)
         gp.backward()
@@ -392,12 +353,8 @@ class FasterAutoAugmentBase:
 
 
 class FAAClassification(FasterAutoAugmentBase):
-    def create_main_model(self):
-        model_cfg = self.cfg.classification_model
-        main_model = ClassificationDiscriminator(
-            model_cfg.architecture, num_classes=model_cfg.num_classes, pretrained=model_cfg.pretrained
-        ).to(self.cfg.device)
-        return main_model
+    def get_main_model_cfg(self):
+        return self.cfg.classification_model
 
     def create_loss(self):
         return nn.CrossEntropyLoss().to(self.cfg.device)
@@ -408,15 +365,8 @@ class FAAClassification(FasterAutoAugmentBase):
 
 
 class FAASemanticSegmentation(FasterAutoAugmentBase):
-    def create_main_model(self):
-        model_cfg = self.cfg.semantic_segmentation_model
-        main_model = SegmentationDiscriminator(
-            model_cfg.architecture,
-            encoder_architecture=model_cfg.encoder_architecture,
-            num_classes=model_cfg.num_classes,
-            pretrained=model_cfg.pretrained,
-        ).to(self.cfg.device)
-        return main_model
+    def get_main_model_cfg(self):
+        return self.cfg.semantic_segmentation_model
 
     def create_loss(self):
         return nn.BCEWithLogitsLoss().to(self.cfg.device)
@@ -426,7 +376,7 @@ class FAASemanticSegmentation(FasterAutoAugmentBase):
         return output["image_batch"], output["mask_batch"]
 
 
-def get_faa_seacher(cfg):
+def get_faa_searcher(cfg):
     task = cfg.task
     if task == "semantic_segmentation":
         return FAASemanticSegmentation(cfg)
