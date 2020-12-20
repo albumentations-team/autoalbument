@@ -21,3 +21,5 @@ jobs:
           registry: docker.pkg.github.com
           repository: albumentations-team/autoalbument/autoalbument
           tag_with_ref: true
+          dockerfile: ./docker/Dockerfile
+          tags: latest
