@@ -13,13 +13,9 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Push to GitHub Packages
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: albumentations-team/autoalbument/autoalbument
-          tag_with_ref: true
-          dockerfile: ./docker/Dockerfile
-          tags: latest
+      - name: Login to Github Container Registry
+        run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build image
+        run: docker build -f docker/Dockerfile --tag ghcr.io/albumentations-team/autoalbument:$GITHUB_SHA --tag ghcr.io/albumentations-team/autoalbument:latest .
+      - name: Push image
+        run: docker push ghcr.io/albumentations-team/autoalbument
