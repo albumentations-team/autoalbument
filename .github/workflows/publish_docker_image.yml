@@ -1,10 +1,7 @@
 name: Publish Docker image
 on:
-#  release:
-#    types: [published]
-  push:
-    branches:
-      - refactoring
+  release:
+    types: [published]
 
 jobs:
   push_to_registry:
@@ -16,6 +13,11 @@ jobs:
       - name: Login to Github Container Registry
         run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build image
-        run: docker build -f docker/Dockerfile --tag ghcr.io/albumentations-team/autoalbument:$GITHUB_SHA --tag ghcr.io/albumentations-team/autoalbument:latest .
+        run: |
+          docker build
+          -f docker/Dockerfile
+          --tag ghcr.io/albumentations-team/autoalbument:${{ github.event.release.tag_name }}
+          --tag ghcr.io/albumentations-team/autoalbument:latest
+          .
       - name: Push image
         run: docker push ghcr.io/albumentations-team/autoalbument
