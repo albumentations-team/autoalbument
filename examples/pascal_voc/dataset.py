@@ -54,8 +54,8 @@ VOC_COLORMAP = [
 
 
 class SearchDataset(VOCSegmentation):
-    def __init__(self, image_set="train", transform=None):
-        super().__init__(root="~/data/pascal_voc", image_set=image_set, download=True, transform=transform)
+    def __init__(self, root="~/data/pascal_voc", image_set="train", download=True, transform=None):
+        super().__init__(root=root, image_set=image_set, download=download, transform=transform)
 
     @staticmethod
     def _convert_to_segmentation_mask(mask):

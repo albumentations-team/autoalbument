@@ -95,6 +95,9 @@ data:
   #
   dataset:
     _target_: dataset.SearchDataset
+    root: "~/data/pascal_voc"
+    image_set: "train"
+    download: True
 
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
