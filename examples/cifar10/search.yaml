@@ -41,24 +41,29 @@ policy_model:
   # and increase the searching time.
   operation_count: 4
 
-
 # Settings for Classification Model that is used for two purposes:
 # 1. As a model that performs classification of input images.
 # 2. As a Discriminator for Policy Model.
 classification_model:
+  # A custom classification model is used. This model is defined inside the `model.py` file which is located
+  # in the same directory with `search.yaml` and `dataset.py`.
+  _target_: model.Cifar10ClassificationModel
 
-  # Number of classes in the dataset. The dataset implementation should return an integer in the range
-  # [0, num_classes - 1] as a class label of an image.
-  num_classes: 10
-
-  # The architecture of Classification Model. AutoAlbument uses models from
-  # https://github.com/rwightman/pytorch-image-models/. Please refer to its documentation to get a list of available
-  # models - https://rwightman.github.io/pytorch-image-models/#list-models-with-pretrained-weights.
-  architecture: resnet18
-
-  # Boolean flag that indicates whether the selected model architecture should load pretrained weights or use randomly
-  # initialized weights.
-  pretrained: False
+  #  # As an alternative, you could use a built-in AutoAldbument model using the following config:
+  #  #  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
+  #
+  #  # Number of classes in the dataset. The dataset implementation should return an integer in the range
+  #  # [0, num_classes - 1] as a class label of an image.
+  #  num_classes: 10
+  #
+  #  # The architecture of Classification Model. AutoAlbument uses models from
+  #  # https://github.com/rwightman/pytorch-image-models/. Please refer to its documentation to get a list of available
+  #  # models - https://rwightman.github.io/pytorch-image-models/#list-models-with-pretrained-weights.
+  #  architecture: resnet18
+  #
+  #  # Boolean flag that indicates whether the selected model architecture should load pretrained weights or use randomly
+  #  # initialized weights.
+  #  pretrained: False
 
 data:
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using
@@ -83,6 +88,9 @@ data:
   #
   dataset:
     _target_: dataset.SearchDataset
+    root: "~/data/cifar10"
+    train: True
+    download: True
 
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range

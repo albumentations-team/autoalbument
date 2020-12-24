@@ -46,14 +46,16 @@ class PolicyModelConfig:
 
 @dataclass
 class ClassificationModelConfig:
-    num_classes: int = MISSING
+    _target_: str = "autoalbument.faster_autoaugment.models.ClassificationModel"
+    num_classes: Optional[int] = None
     architecture: str = "resnet18"
     pretrained: bool = False
 
 
 @dataclass
 class SemanticSegmentationModelConfig:
-    num_classes: int = MISSING
+    _target_: str = "autoalbument.faster_autoaugment.models.SemanticSegmentationModel"
+    num_classes: Optional[int] = None
     architecture: str = "Unet"
     encoder_architecture: str = "resnet18"
     pretrained: bool = False

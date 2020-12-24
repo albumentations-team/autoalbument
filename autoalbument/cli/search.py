@@ -8,7 +8,7 @@ from omegaconf import OmegaConf
 
 from autoalbument.config.faster_autoaugment import FasterAutoAugmentSearchConfig
 from autoalbument.config.validation import validate_cfg
-from autoalbument.faster_autoaugment.search import get_faa_seacher
+from autoalbument.faster_autoaugment.search import get_faa_searcher
 from autoalbument.utils.hydra import get_config_dir
 
 OmegaConf.register_resolver("config_dir", get_config_dir)
@@ -37,5 +37,5 @@ def main(cfg):
     print(get_prettified_cfg(cfg))
     cwd = os.getcwd()
     print(f"Working directory: {cwd}")
-    faa_searcher = get_faa_seacher(cfg)
+    faa_searcher = get_faa_searcher(cfg)
     faa_searcher.search()

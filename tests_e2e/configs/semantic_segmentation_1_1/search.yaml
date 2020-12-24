@@ -1,24 +1,32 @@
-task: classification
+# @package _global_
+
+task: semantic_segmentation
 
 policy_model:
   task_factor: 0.1
   gp_factor: 10
   temperature: 0.05
   num_sub_policies: 10
-  num_chunks: 8
+  num_chunks: 4
   operation_count: 4
 
 
-classification_model:
-  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
+semantic_segmentation_model:
+  _target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
   num_classes: 10
-  architecture: resnet18
+  architecture: Unet
+  encoder_architecture: resnet18
   pretrained: False
+
 
 data:
   dataset_file: dataset.py
   input_dtype: uint8
-  preprocessing: null
+  preprocessing:
+    - Resize:
+        height: 128
+        width: 128
+
   normalization:
     mean: [0.485, 0.456, 0.406]
     std: [0.229, 0.224, 0.225]
@@ -28,15 +36,16 @@ data:
     batch_size: 16
     shuffle: True
     num_workers: 0
-    pin_memory: False
+    pin_memory: True
     drop_last: True
 
 optim:
-  epochs:  1
+  epochs: 1
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
+
   policy:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -44,7 +53,14 @@ optim:
 
 device: cpu
 
-cudnn_benchmark: False
+cudnn_benchmark: True
+
 save_checkpoints: False
 checkpoint_path: null
 tensorboard_logs_dir: null
+
+seed: 42
+
+hydra:
+  run:
+    dir: ${config_dir:}/outputs

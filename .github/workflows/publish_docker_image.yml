@@ -1,0 +1,23 @@
+name: Publish Docker image
+on:
+  release:
+    types: [published]
+
+jobs:
+  push_to_registry:
+    name: Push Docker image to GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Login to Github Container Registry
+        run: echo ${{ secrets.CR_PAT }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build image
+        run: |
+          docker build
+          -f docker/Dockerfile
+          --tag ghcr.io/albumentations-team/autoalbument:${{ github.event.release.tag_name }}
+          --tag ghcr.io/albumentations-team/autoalbument:latest
+          .
+      - name: Push image
+        run: docker push ghcr.io/albumentations-team/autoalbument

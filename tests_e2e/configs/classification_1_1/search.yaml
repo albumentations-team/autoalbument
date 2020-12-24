@@ -1,3 +1,5 @@
+# @package _global_
+
 task: classification
 
 policy_model:
@@ -7,7 +9,6 @@ policy_model:
   num_sub_policies: 10
   num_chunks: 8
   operation_count: 4
-
 
 classification_model:
   _target_: autoalbument.faster_autoaugment.models.ClassificationModel
@@ -28,7 +29,7 @@ data:
     batch_size: 16
     shuffle: True
     num_workers: 0
-    pin_memory: False
+    pin_memory: True
     drop_last: True
 
 optim:
@@ -44,7 +45,13 @@ optim:
 
 device: cpu
 
-cudnn_benchmark: False
+cudnn_benchmark: True
 save_checkpoints: False
 checkpoint_path: null
 tensorboard_logs_dir: null
+
+seed: 42
+
+hydra:
+  run:
+    dir: ${config_dir:}/outputs
