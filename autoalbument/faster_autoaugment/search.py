@@ -51,7 +51,8 @@ class FasterAutoAugmentBase:
 
     def create_tensorboard_writer(self):
         if self.cfg.tensorboard_logs_dir:
-            return SummaryWriter(os.path.join(self.cfg.tensorboard_logs_dir, os.getcwd().replace(os.sep, ".")))
+            filename = os.getcwd().replace(os.sep, ".").lstrip(".")
+            return SummaryWriter(os.path.join(self.cfg.tensorboard_logs_dir, filename))
         return None
 
     def get_policy_state_dict(self):

@@ -24,7 +24,7 @@ policy_model:
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
   # augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
   # space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
-  num_sub_policies: 40
+  num_sub_policies: 100
 
   # Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
   # applies the same sub-policy with the same parameters to each image in a chunk. This parameter controls the tradeoff
@@ -39,7 +39,6 @@ policy_model:
   # a model trained on augmented images. Simultaneously, larger values of `operation_count` affect the speed of search
   # and increase the searching time.
   operation_count: 4
-
 
 # Settings for Semantic Segmentation Model that is used for two purposes:
 # 1. As a model that performs semantic segmentation of input images.
@@ -57,11 +56,11 @@ semantic_segmentation_model:
   # The architecture of Semantic Segmentation Model. AutoAlbument uses models from
   # https://github.com/qubvel/segmentation_models.pytorch. Please refer to its documentation to get a list of available
   # models - https://github.com/qubvel/segmentation_models.pytorch#models-.
-  architecture: Unet
+  architecture: DeepLabV3Plus
 
   # The architecture of encoder in Semantic Segmentation Model. Please refer to Segmentation Models' documentation to
   # get a list of available encoders - https://github.com/qubvel/segmentation_models.pytorch#encoders-
-  encoder_architecture: se_resnext50_32x4d
+  encoder_architecture: resnet50
 
   # Either boolean flag or string with that indicates whether the selected encoder architecture should load pretrained
   # weights or use randomly initialized weights.
@@ -70,7 +69,6 @@ semantic_segmentation_model:
   # - In the case of string the value should specify the name of the weights. For the list of available weights please
   #   refer to https://github.com/qubvel/segmentation_models.pytorch#encoders-
   pretrained: True
-
 
 data:
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using
@@ -94,7 +92,7 @@ data:
   # dataset_file: /projects/pytorch/dataset.py
   #
   dataset:
-    _target_: dataset.SearchDataset
+    _target_: dataset.PascalVOCSearchDataset
     root: "~/data/pascal_voc"
     image_set: "train"
     download: True
@@ -126,9 +124,13 @@ data:
   #        width: 224
   #
   preprocessing:
-    - Resize:
-        height: 128
-        width: 128
+    - LongestMaxSize:
+        max_size: 256
+    - PadIfNeeded:
+        min_height: 256
+        min_width: 256
+        border_mode: 0
+        value: [0, 0, 0]
 
   # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
@@ -142,15 +144,15 @@ data:
   # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 64
+    batch_size: 32
     shuffle: True
-    num_workers: 4
+    num_workers: 8
     pin_memory: True
     drop_last: True
 
 optim:
   # Number of epochs to search parameters of augmentations.
-  epochs: 60
+  epochs: 50
 
   # Optimizer configuration for Semantic Segmentation Model
   main:
@@ -182,7 +184,9 @@ checkpoint_path: null
 
 # Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
 # this feature.
-tensorboard_logs_dir: null
+tensorboard_logs_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
+
+seed: 42
 
 hydra:
   run:

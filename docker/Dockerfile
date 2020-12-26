@@ -9,6 +9,9 @@ RUN useradd --create-home --shell /bin/bash --no-log-init autoalbument
 USER autoalbument
 ENV PATH="/home/autoalbument/.local/bin:${PATH}"
 WORKDIR /opt/autoalbument
+COPY ./docker/requirements.txt /opt/autoalbument/docker/requirements.txt
+RUN pip install --no-cache-dir -r /opt/autoalbument/docker/requirements.txt
+
 COPY . .
 RUN pip install --no-cache-dir .
 COPY docker/entrypoint.sh entrypoint.sh

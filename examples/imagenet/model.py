@@ -78,34 +78,26 @@ class WideResNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 m.bias.data.zero_()
 
-    def forward_features(self, x):
-        x = self.conv1(x)
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.block3(x)
-        x = self.relu(self.bn1(x))
-        x = F.avg_pool2d(x, 8, 1, 0)
-        x = x.view(-1, self.n_channels)
-        return x
-
-    def forward_classifier(self, x):
-        return self.fc(x)
-
     def forward(self, x):
-        x = self.forward_features(x)
-        x = self.forward_classifier(x)
-        return x
+        out = self.conv1(x)
+        out = self.block1(out)
+        out = self.block2(out)
+        out = self.block3(out)
+        out = self.relu(self.bn1(out))
+        out = F.avg_pool2d(out, 8, 1, 0)
+        out = out.view(-1, self.n_channels)
+        return self.fc(out)
 
 
 def wide_resnet_28x10(num_classes):
     return WideResNet(depth=28, widen_factor=10, num_classes=num_classes)
 
 
-class Cifar10ClassificationModel(BaseDiscriminator):
+class SVHNClassificationModel(BaseDiscriminator):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.base_model = wide_resnet_28x10(num_classes=10)
-        num_features = self.base_model.fc.in_features
+        num_features = self.base_model.linear.in_features
         self.discriminator = nn.Sequential(
             nn.Linear(num_features, num_features), nn.ReLU(), nn.Linear(num_features, 1)
         )
