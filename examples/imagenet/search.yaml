@@ -45,11 +45,9 @@ policy_model:
 # 1. As a model that performs classification of input images.
 # 2. As a Discriminator for Policy Model.
 classification_model:
-  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
-
   # Number of classes in the dataset. The dataset implementation should return an integer in the range
   # [0, num_classes - 1] as a class label of an image.
-  num_classes: 10
+  num_classes: 1000
 
   # The architecture of Classification Model. AutoAlbument uses models from
   # https://github.com/rwightman/pytorch-image-models/. Please refer to its documentation to get a list of available
@@ -132,7 +130,7 @@ data:
   # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 128
+    batch_size: 256
     shuffle: True
     num_workers: 8
     pin_memory: True
