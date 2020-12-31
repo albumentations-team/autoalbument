@@ -151,7 +151,7 @@ data:
 
 optim:
   # Number of epochs to search parameters of augmentations.
-  epochs: 50
+  epochs: 150
 
   # Optimizer configuration for Semantic Segmentation Model
   main:
