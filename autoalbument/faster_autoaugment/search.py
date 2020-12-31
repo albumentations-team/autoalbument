@@ -13,6 +13,7 @@ import albumentations as A
 import torch
 from albumentations.pytorch import ToTensorV2
 from hydra.utils import instantiate
+from omegaconf import OmegaConf
 from torch import Tensor, nn
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -83,7 +84,7 @@ class FasterAutoAugmentBase:
         return MetricTracker()
 
     def get_preprocessing_transforms(self):
-        preprocessing_config = self.cfg.data.preprocessing
+        preprocessing_config = OmegaConf.to_container(self.cfg.data.preprocessing, resolve=True)
         preprocessing_transforms = []
         if preprocessing_config:
             for preprocessing_transform in preprocessing_config:
