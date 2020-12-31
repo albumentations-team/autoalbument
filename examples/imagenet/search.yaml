@@ -33,7 +33,7 @@ policy_model:
   # faster searching but less diverse set of augmentations. Note that this parameter is used only in the searching
   # phase. When you train a model with found sub-policies, Albumentations will apply a distinct set of transformations
   # to each image separately.
-  num_chunks: 8
+  num_chunks: 6
 
   # Number of consecutive augmentations in each sub-policy. Faster AutoAugment will sequentially apply `operation_count`
   # augmentations from a sub-policy to an image. Larger values of `operation_count` lead to better performance of
@@ -130,7 +130,7 @@ data:
   # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 128
+    batch_size: 96
     shuffle: True
     num_workers: 8
     pin_memory: True
