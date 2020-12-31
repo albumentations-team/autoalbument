@@ -93,7 +93,7 @@ data:
   #
   dataset:
     _target_: dataset.CityscapesSearchDataset
-    root: "~/data/cityscapes"
+    root: "~/data/cityscapes/data"
     split: "train"
 
   # The data type of input images. Two values are supported:
