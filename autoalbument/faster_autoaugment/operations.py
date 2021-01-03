@@ -422,8 +422,8 @@ class RandomCropAndPad(Operation):
                     width=crop_size,
                 ),
                 A.PadIfNeeded(
-                    min_height=height,
-                    min_width=width,
+                    min_height=height.item(),
+                    min_width=width.item(),
                     border_mode=cv2.BORDER_CONSTANT,
                     value=[0, 0, 0],
                 ),
