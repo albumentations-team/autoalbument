@@ -76,7 +76,7 @@ def cutout(img_batch, num_holes, hole_size, fill_value=0):
     return img_batch
 
 
-def random_crop_and_pad(img_batch, crop_size):
+def crop_and_pad(img_batch, crop_size):
     img_batch = img_batch.clone()
     height, width = img_batch.shape[-2:]
     h_start, w_start = torch.rand(2)
@@ -84,6 +84,8 @@ def random_crop_and_pad(img_batch, crop_size):
     y2 = y1 + crop_size
     x1 = ((width - crop_size) * w_start).type(torch.IntTensor)
     x2 = x1 + crop_size
+    pad_top_bottom = (height - crop_size) // 2
+    pad_left_right = (width - crop_size) // 2
     img_batch = img_batch[..., y1:y2, x1:x2]
-    img_batch = F.pad(img_batch, (x1, width - x2, y1, height - y2), "constant", 0)
+    img_batch = F.pad(img_batch, (pad_left_right, pad_left_right, pad_top_bottom, pad_top_bottom), "constant", 0)
     return img_batch

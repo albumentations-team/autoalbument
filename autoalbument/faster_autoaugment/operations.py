@@ -414,10 +414,19 @@ class RandomCropAndPad(Operation):
     def as_transform(self, value, p):
         image_shape = self.saved_image_shape
         crop_size = self._calculate_crop_size(value, image_shape)
-        return A.RandomCropAndPad(
-            height=crop_size,
-            width=crop_size,
-            border_mode=cv2.BORDER_CONSTANT,
-            value=[0, 0, 0],
+        height, width = image_shape
+        return A.Sequential(
+            [
+                A.RandomCrop(
+                    height=crop_size,
+                    width=crop_size,
+                ),
+                A.PadIfNeeded(
+                    min_height=height,
+                    min_width=width,
+                    border_mode=cv2.BORDER_CONSTANT,
+                    value=[0, 0, 0],
+                ),
+            ],
             p=p,
         )
