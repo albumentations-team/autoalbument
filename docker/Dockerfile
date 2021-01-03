@@ -11,7 +11,7 @@ ENV PATH="/home/autoalbument/.local/bin:${PATH}"
 WORKDIR /opt/autoalbument
 COPY ./docker/requirements.txt /opt/autoalbument/docker/requirements.txt
 RUN pip install --no-cache-dir -r /opt/autoalbument/docker/requirements.txt
-RUN pip install --no-cache-dir https://github.com/albumentations-team/albumentations/archive/random_crop_and_pad.zip
+RUN pip install --no-cache-dir https://github.com/albumentations-team/albumentations/archive/random_crop_and_pad_0.5.2.zip
 COPY . .
 RUN pip install --no-cache-dir .
 COPY docker/entrypoint.sh entrypoint.sh
