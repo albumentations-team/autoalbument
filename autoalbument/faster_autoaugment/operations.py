@@ -419,4 +419,5 @@ class RandomCropAndPad(Operation):
             width=crop_size,
             border_mode=cv2.BORDER_CONSTANT,
             value=[0, 0, 0],
+            p=p,
         )
