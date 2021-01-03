@@ -14,7 +14,7 @@ from albumentations.pytorch import ToTensorV2
 from torch import Tensor, nn
 
 from autoalbument.faster_autoaugment.operations import (
-    CutoutFixedNumerOfHoles,
+    CutoutFixedNumberOfHoles,
     CutoutFixedSize,
     HorizontalFlip,
     RandomBrightness,
@@ -26,6 +26,7 @@ from autoalbument.faster_autoaugment.operations import (
     ShiftY,
     Solarize,
     VerticalFlip,
+    RandomCropAndPad,
 )
 from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, target_requires_grad
 
@@ -164,8 +165,9 @@ class Policy(nn.Module):
             ShiftX(temperature=temperature),
             ShiftY(temperature=temperature),
             Scale(temperature=temperature),
-            CutoutFixedNumerOfHoles(temperature=temperature),
+            CutoutFixedNumberOfHoles(temperature=temperature),
             CutoutFixedSize(temperature=temperature),
+            RandomCropAndPad(temperature=temperature),
         ]
 
     @staticmethod

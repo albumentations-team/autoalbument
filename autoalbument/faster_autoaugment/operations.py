@@ -6,6 +6,7 @@ https://github.com/moskomule/dda/blob/master/dda/operations.py
 import warnings
 
 import albumentations as A
+import cv2
 import torch
 from torch import nn
 from torch.autograd import Function
@@ -292,7 +293,7 @@ class Rotate(Operation):
 
 class Cutout(Operation):
     def __init__(self, temperature, value_range=(0.0, 1.0)):
-        super().__init__(temperature, value_range=value_range)
+        super().__init__(temperature, value_range=value_range, ste=True)
         self.register_buffer("saved_image_shape", torch.Tensor([0, 0]).type(torch.int64))
         self.is_image_shape_saved = False
 
@@ -325,7 +326,7 @@ class Cutout(Operation):
         raise NotImplementedError
 
 
-class CutoutFixedNumerOfHoles(Cutout):
+class CutoutFixedNumberOfHoles(Cutout):
     def __init__(self, temperature, num_holes=16):
         super().__init__(temperature)
         self.num_holes = num_holes
@@ -374,4 +375,48 @@ class CutoutFixedSize(Cutout):
             max_height=hole_size,
             max_width=hole_size,
             p=p,
+        )
+
+
+class RandomCropAndPad(Operation):
+    def __init__(self, temperature):
+        super().__init__(temperature, is_spatial_level=True, ste=True)
+        self.register_buffer("saved_image_shape", torch.Tensor([0, 0]).type(torch.int64))
+        self.is_image_shape_saved = False
+
+    def _save_image_shape(self, image_shape):
+        if not torch.equal(self.saved_image_shape, image_shape):
+            if self.is_image_shape_saved:
+                warnings.warn(
+                    f"Shape of images in a batch changed between iterations "
+                    f"from {self.saved_image_shape} to {image_shape}. "
+                    f"This will affect the created Albumentations transform. "
+                    f"The transform will use the shape {image_shape} to initialize its parameters",
+                    RuntimeWarning,
+                )
+            self.is_image_shape_saved = True
+            self.saved_image_shape = image_shape
+
+    def _calculate_crop_size(self, value, image_shape):
+        height, width = image_shape
+        min_size = min(height, width)
+        return max(int(min_size * (1 - value)), 1)
+
+    def apply_operation(self, input, value):
+        image_shape = input.shape[-2:]
+        self._save_image_shape(torch.tensor(image_shape).to(input.device))
+        return self._apply_operation(input, value, image_shape)
+
+    def _apply_operation(self, input, value, image_shape):
+        crop_size = self._calculate_crop_size(value, image_shape)
+        return F.random_crop_and_pad(input, crop_size)
+
+    def as_transform(self, value, p):
+        image_shape = self.saved_image_shape
+        crop_size = self._calculate_crop_size(value, image_shape)
+        return A.RandomCropAndPad(
+            height=crop_size,
+            width=crop_size,
+            border_mode=cv2.BORDER_CONSTANT,
+            value=[0, 0, 0],
         )

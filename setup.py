@@ -28,7 +28,7 @@ setup(
     license="MIT",
     url="https://github.com/albumentations-team/autoalbument",
     install_requires=[
-        "albumentations>=0.5.1",
+        "albumentations @ https://github.com/albumentations-team/albumentations/archive/random_crop_and_pad.zip#egg=albumentations-0.5.3",  # noqa: E501
         "torch>=1.6.0",
         "hydra-core>=1.0",
         "timm>=0.3.2",  # This version is required for segmentation-models-pytorch
