@@ -67,13 +67,12 @@ def scale(img_batch, scale, padding_mode=TorchPadding.REFLECTION):
 def cutout(img_batch, num_holes, hole_size, fill_value=0):
     img_batch = img_batch.clone()
     height, width = img_batch.shape[-2:]
-    for i in range(len(img_batch)):
-        for _n in range(num_holes):
-            y1 = random.randint(0, height - hole_size)
-            x1 = random.randint(0, width - hole_size)
-            y2 = y1 + hole_size
-            x2 = x1 + hole_size
-            img_batch[i, :, y1:y2, x1:x2] = fill_value
+    for _n in range(num_holes):
+        y1 = random.randint(0, height - hole_size)
+        x1 = random.randint(0, width - hole_size)
+        y2 = y1 + hole_size
+        x2 = x1 + hole_size
+        img_batch[:, :, y1:y2, x1:x2] = fill_value
     return img_batch
 
 
