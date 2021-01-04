@@ -84,20 +84,22 @@ class FasterAutoAugmentBase:
         return MetricTracker()
 
     def get_preprocessing_transforms(self):
-        preprocessing_config = OmegaConf.to_container(self.cfg.data.preprocessing, resolve=True)
+        preprocessing_config = self.cfg.data.preprocessing
+        if not preprocessing_config:
+            return []
+        preprocessing_config = OmegaConf.to_container(preprocessing_config, resolve=True)
         preprocessing_transforms = []
-        if preprocessing_config:
-            for preprocessing_transform in preprocessing_config:
-                for transform_name, transform_args in preprocessing_transform.items():
-                    transform = A.from_dict(
-                        {
-                            "transform": {
-                                "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
-                                **transform_args,
-                            }
+        for preprocessing_transform in preprocessing_config:
+            for transform_name, transform_args in preprocessing_transform.items():
+                transform = A.from_dict(
+                    {
+                        "transform": {
+                            "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
+                            **transform_args,
                         }
-                    )
-                    preprocessing_transforms.append(transform)
+                    }
+                )
+                preprocessing_transforms.append(transform)
         return preprocessing_transforms
 
     def create_preprocessing_transform(self):
