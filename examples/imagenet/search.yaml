@@ -138,7 +138,7 @@ data:
 
 optim:
   # Number of epochs to search parameters of augmentations.
-  epochs:  10
+  epochs:  2
 
   # Optimizer configuration for Classification Model
   main:
