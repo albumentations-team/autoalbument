@@ -26,7 +26,6 @@ from autoalbument.faster_autoaugment.operations import (
     ShiftY,
     Solarize,
     VerticalFlip,
-    RandomCropAndPad,
 )
 from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, target_requires_grad
 
@@ -167,7 +166,6 @@ class Policy(nn.Module):
             Scale(temperature=temperature),
             CutoutFixedNumberOfHoles(temperature=temperature),
             CutoutFixedSize(temperature=temperature),
-            RandomCropAndPad(temperature=temperature),
         ]
 
     @staticmethod
