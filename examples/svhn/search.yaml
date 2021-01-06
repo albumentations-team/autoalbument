@@ -87,7 +87,7 @@ data:
   # dataset_file: /projects/pytorch/dataset.py
   #
   dataset:
-    _target_: ConcatSVHNSearchDataset
+    _target_: dataset.ConcatSVHNSearchDataset
     root: "~/data/svhn"
     download: true
 
