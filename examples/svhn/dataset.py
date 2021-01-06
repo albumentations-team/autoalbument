@@ -1,3 +1,4 @@
+import torch
 import torchvision
 import numpy as np
 
@@ -17,3 +18,12 @@ class SVHNSearchDataset(torchvision.datasets.SVHN):
             image = transformed["image"]
 
         return image, label
+
+
+class ConcatSVHNSearchDataset(torch.utils.data.ConcatDataset):
+    def __init__(self, root, download, transform=None):
+        datasets = [
+            SVHNSearchDataset(root=root, split="train", download=download, transform=transform),
+            SVHNSearchDataset(root=root, split="extra", download=download, transform=transform),
+        ]
+        super().__init__(datasets)

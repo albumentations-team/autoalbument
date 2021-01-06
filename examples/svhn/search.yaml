@@ -87,9 +87,8 @@ data:
   # dataset_file: /projects/pytorch/dataset.py
   #
   dataset:
-    _target_: dataset.SVHNSearchDataset
+    _target_: ConcatSVHNSearchDataset
     root: "~/data/svhn"
-    split: "train"
     download: true
 
   # The data type of input images. Two values are supported:
