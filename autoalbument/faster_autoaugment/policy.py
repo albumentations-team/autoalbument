@@ -34,12 +34,11 @@ from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, tar
 class SubPolicyStage(nn.Module):
     def __init__(
         self,
+        operations: nn.ModuleList,
         temperature: float,
     ):
         super().__init__()
-        operations = Policy.dda_operations(temperature=temperature)
-        random.shuffle(operations)
-        self.operations = nn.ModuleList(operations)
+        self.operations = operations
         self._weights = nn.Parameter(torch.ones(len(self.operations)))
         self.temperature = temperature
 
@@ -75,11 +74,11 @@ class SubPolicyStage(nn.Module):
 class SubPolicy(nn.Module):
     def __init__(
         self,
-        temperature,
-        operation_count,
+        sub_policy_stage: SubPolicyStage,
+        operation_count: int,
     ):
         super().__init__()
-        self.stages = nn.ModuleList([SubPolicyStage(temperature) for _ in range(operation_count)])
+        self.stages = nn.ModuleList([deepcopy(sub_policy_stage) for _ in range(operation_count)])
 
     def forward(self, input: Dict[str, Tensor]) -> Dict[str, Tensor]:
         for stage in self.stages:
@@ -93,6 +92,7 @@ class SubPolicy(nn.Module):
 class Policy(nn.Module):
     def __init__(
         self,
+        operations: nn.ModuleList,
         num_sub_policies: int,
         temperature: float,
         operation_count: int,
@@ -101,7 +101,9 @@ class Policy(nn.Module):
         std: Tensor,
     ):
         super().__init__()
-        self.sub_policies = nn.ModuleList([SubPolicy(temperature, operation_count) for _ in range(num_sub_policies)])
+        self.sub_policies = nn.ModuleList(
+            [SubPolicy(SubPolicyStage(operations, temperature), operation_count) for _ in range(num_sub_policies)]
+        )
         self.num_sub_policies = num_sub_policies
         self.temperature = temperature
         self.operation_count = operation_count
@@ -178,6 +180,7 @@ class Policy(nn.Module):
         std: torch.Tensor,
     ):
         return Policy(
+            nn.ModuleList(Policy.dda_operations(temperature)),
             num_sub_policies,
             temperature,
             operation_count,
