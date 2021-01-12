@@ -101,7 +101,7 @@ def wide_resnet_28x10(num_classes):
     return WideResNet(depth=28, widen_factor=10, num_classes=num_classes)
 
 
-class Cifar10ClassificationModel(BaseDiscriminator):
+class SVHNClassificationModel(BaseDiscriminator):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.base_model = wide_resnet_28x10(num_classes=10)

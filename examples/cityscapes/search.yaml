@@ -1,13 +1,12 @@
 # @package _global_
 
-task: classification
+task: semantic_segmentation
 
 # Settings for Policy Model that searches augmentation policies.
 policy_model:
 
-  # Multiplier for classification loss of a model. Faster AutoAugment uses classification loss to prevent augmentations
-  # from transforming images of a particular class to another class. The authors of Faster AutoAugment use 0.1 as
-  # default value.
+  # Multiplier for segmentation loss of a model. Faster AutoAugment uses segmentation loss to prevent augmentations
+  # from transforming images of a particular class to another class.
   task_factor: 0.1
 
   # Multiplier for the gradient penalty for WGAN-GP training. 10 is the default value that was proposed in
@@ -25,7 +24,7 @@ policy_model:
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
   # augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
   # space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
-  num_sub_policies: 100
+  num_sub_policies: 25
 
   # Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
   # applies the same sub-policy with the same parameters to each image in a chunk. This parameter controls the tradeoff
@@ -33,7 +32,7 @@ policy_model:
   # faster searching but less diverse set of augmentations. Note that this parameter is used only in the searching
   # phase. When you train a model with found sub-policies, Albumentations will apply a distinct set of transformations
   # to each image separately.
-  num_chunks: 8
+  num_chunks: 4
 
   # Number of consecutive augmentations in each sub-policy. Faster AutoAugment will sequentially apply `operation_count`
   # augmentations from a sub-policy to an image. Larger values of `operation_count` lead to better performance of
@@ -41,29 +40,35 @@ policy_model:
   # and increase the searching time.
   operation_count: 4
 
-# Settings for Classification Model that is used for two purposes:
-# 1. As a model that performs classification of input images.
+# Settings for Semantic Segmentation Model that is used for two purposes:
+# 1. As a model that performs semantic segmentation of input images.
 # 2. As a Discriminator for Policy Model.
-classification_model:
-  # A custom classification model is used. This model is defined inside the `model.py` file which is located
-  # in the same directory with `search.yaml` and `dataset.py`.
-  _target_: model.Cifar10ClassificationModel
+semantic_segmentation_model:
+  # By default, AutoAlbument uses an instance of `autoalbument.faster_autoaugment.models.SemanticSegmentationModel` as
+  # a semantic segmentation model.
+  # This model takes four parameters: `num_classes`, `architecture`, `encoder_architecture` and `pretrained`.
+  _target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
 
-  #  # As an alternative, you could use a built-in AutoAldbument model using the following config:
-  #  #  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
-  #
-  #  # Number of classes in the dataset. The dataset implementation should return an integer in the range
-  #  # [0, num_classes - 1] as a class label of an image.
-  #  num_classes: 10
-  #
-  #  # The architecture of Classification Model. AutoAlbument uses models from
-  #  # https://github.com/rwightman/pytorch-image-models/. Please refer to its documentation to get a list of available
-  #  # models - https://rwightman.github.io/pytorch-image-models/#list-models-with-pretrained-weights.
-  #  architecture: resnet18
-  #
-  #  # Boolean flag that indicates whether the selected model architecture should load pretrained weights or use randomly
-  #  # initialized weights.
-  #  pretrained: False
+  # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
+  # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.
+  num_classes: 19
+
+  # The architecture of Semantic Segmentation Model. AutoAlbument uses models from
+  # https://github.com/qubvel/segmentation_models.pytorch. Please refer to its documentation to get a list of available
+  # models - https://github.com/qubvel/segmentation_models.pytorch#models-.
+  architecture: DeepLabV3Plus
+
+  # The architecture of encoder in Semantic Segmentation Model. Please refer to Segmentation Models' documentation to
+  # get a list of available encoders - https://github.com/qubvel/segmentation_models.pytorch#encoders-
+  encoder_architecture: resnet50
+
+  # Either boolean flag or string with that indicates whether the selected encoder architecture should load pretrained
+  # weights or use randomly initialized weights.
+  # - In the case of boolean flag `true` means using pretrained weights from ImageNet and `false` means using randomly
+  #   initialized weights.
+  # - In the case of string the value should specify the name of the weights. For the list of available weights please
+  #   refer to https://github.com/qubvel/segmentation_models.pytorch#encoders-
+  pretrained: True
 
 data:
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using
@@ -87,10 +92,9 @@ data:
   # dataset_file: /projects/pytorch/dataset.py
   #
   dataset:
-    _target_: dataset.Cifar10SearchDataset
-    root: "~/data/cifar10"
-    train: True
-    download: True
+    _target_: dataset.CityscapesSearchDataset
+    root: "~/data/cityscapes/data"
+    split: "train"
 
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
@@ -118,21 +122,28 @@ data:
   #        height: 224
   #        width: 224
   #
-  preprocessing: null
+  preprocessing:
+    - LongestMaxSize:
+        max_size: 256
+    - PadIfNeeded:
+        min_height: 256
+        min_width: 256
+        border_mode: 0
+        value: [0, 0, 0]
 
   # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
   # the normalization function will always receive a `float32` input with values in the range [0.0, 1.0], so you should
-  # define `mean` and `std` values accordingly.
+  # define `mean` and `std` values accordingly. ImageNet normalization is used by default.
   normalization:
-    mean: [0.4914, 0.4822, 0.4465]
-    std: [0.247, 0.243, 0.261]
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
 
   # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
   # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
     _target_: torch.utils.data.DataLoader
-    batch_size: 128
+    batch_size: 32
     shuffle: True
     num_workers: 8
     pin_memory: True
@@ -140,9 +151,9 @@ data:
 
 optim:
   # Number of epochs to search parameters of augmentations.
-  epochs:  20
+  epochs: 50
 
-  # Optimizer configuration for Classification Model
+  # Optimizer configuration for Semantic Segmentation Model
   main:
     _target_: torch.optim.Adam
     lr: 1e-3

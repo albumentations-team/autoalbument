@@ -2,6 +2,9 @@ import cv2
 import numpy as np
 from torchvision.datasets import VOCSegmentation
 
+cv2.setNumThreads(0)
+cv2.ocl.setUseOpenCL(False)
+
 
 VOC_CLASSES = [
     "background",
@@ -53,7 +56,7 @@ VOC_COLORMAP = [
 ]
 
 
-class SearchDataset(VOCSegmentation):
+class PascalVOCSearchDataset(VOCSegmentation):
     def __init__(self, root="~/data/pascal_voc", image_set="train", download=True, transform=None):
         super().__init__(root=root, image_set=image_set, download=download, transform=transform)
 

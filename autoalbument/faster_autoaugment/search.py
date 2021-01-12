@@ -13,6 +13,7 @@ import albumentations as A
 import torch
 from albumentations.pytorch import ToTensorV2
 from hydra.utils import instantiate
+from omegaconf import OmegaConf
 from torch import Tensor, nn
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -51,7 +52,8 @@ class FasterAutoAugmentBase:
 
     def create_tensorboard_writer(self):
         if self.cfg.tensorboard_logs_dir:
-            return SummaryWriter(os.path.join(self.cfg.tensorboard_logs_dir, os.getcwd().replace(os.sep, ".")))
+            filename = os.getcwd().replace(os.sep, ".").lstrip(".")
+            return SummaryWriter(os.path.join(self.cfg.tensorboard_logs_dir, filename))
         return None
 
     def get_policy_state_dict(self):
@@ -83,19 +85,21 @@ class FasterAutoAugmentBase:
 
     def get_preprocessing_transforms(self):
         preprocessing_config = self.cfg.data.preprocessing
+        if not preprocessing_config:
+            return []
+        preprocessing_config = OmegaConf.to_container(preprocessing_config, resolve=True)
         preprocessing_transforms = []
-        if preprocessing_config:
-            for preprocessing_transform in preprocessing_config:
-                for transform_name, transform_args in preprocessing_transform.items():
-                    transform = A.from_dict(
-                        {
-                            "transform": {
-                                "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
-                                **transform_args,
-                            }
+        for preprocessing_transform in preprocessing_config:
+            for transform_name, transform_args in preprocessing_transform.items():
+                transform = A.from_dict(
+                    {
+                        "transform": {
+                            "__class_fullname__": "albumentations.augmentations.transforms." + transform_name,
+                            **transform_args,
                         }
-                    )
-                    preprocessing_transforms.append(transform)
+                    }
+                )
+                preprocessing_transforms.append(transform)
         return preprocessing_transforms
 
     def create_preprocessing_transform(self):

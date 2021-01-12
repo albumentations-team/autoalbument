@@ -6,6 +6,7 @@ https://github.com/moskomule/dda/blob/master/dda/operations.py
 import warnings
 
 import albumentations as A
+import cv2
 import torch
 from torch import nn
 from torch.autograd import Function
@@ -292,7 +293,7 @@ class Rotate(Operation):
 
 class Cutout(Operation):
     def __init__(self, temperature, value_range=(0.0, 1.0)):
-        super().__init__(temperature, value_range=value_range)
+        super().__init__(temperature, value_range=value_range, ste=True)
         self.register_buffer("saved_image_shape", torch.Tensor([0, 0]).type(torch.int64))
         self.is_image_shape_saved = False
 
@@ -325,7 +326,7 @@ class Cutout(Operation):
         raise NotImplementedError
 
 
-class CutoutFixedNumerOfHoles(Cutout):
+class CutoutFixedNumberOfHoles(Cutout):
     def __init__(self, temperature, num_holes=16):
         super().__init__(temperature)
         self.num_holes = num_holes

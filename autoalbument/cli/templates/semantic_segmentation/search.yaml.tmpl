@@ -19,7 +19,7 @@ policy_model:
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
   # augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
   # space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
-  num_sub_policies: 20
+  num_sub_policies: 25
 
   # Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
   # applies the same sub-policy with the same parameters to each image in a chunk. This parameter controls the tradeoff
@@ -110,7 +110,7 @@ data:
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 64
-    num_workers: 4
+    num_workers: 8
 
 optim:
   # Number of epochs to search parameters of augmentations.
