@@ -6,6 +6,26 @@ The library supports image classification and semantic segmentation tasks. You c
 
 The documentation is available at [https://albumentations.ai/docs/autoalbument/](https://albumentations.ai/docs/autoalbument/)
 
+## Benchmarks
+
+Here is a comparison between a baseline augmentation strategy and an augmentation policy discovered by AutoAlbument
+for different classification and semantic segmentation tasks. You can read more about these benchmarks in the [autoalbument-benchmarks](https://github.com/albumentations-team/autoalbument-benchmarks) repository.
+
+### Classification
+| Dataset  | Baseline Top-1 Accuracy | AutoAlbument Top-1 Accuracy  |
+|----------|:-----------------------:|:----------------------------:|
+| [CIFAR10](https://github.com/albumentations-team/autoalbument-benchmarks#cifar-10-classification)  |          91.79          |           **96.02**          |
+| [SVHN](https://github.com/albumentations-team/autoalbument-benchmarks#svhn-classification)     |          98.31          |           **98.48**          |
+| [ImageNet](https://github.com/albumentations-team/autoalbument-benchmarks#imagenet-classification) |          73.27          |           **75.17**          |
+
+
+### Semantic segmentation
+| Dataset    | Baseline mIOU | AutoAlbument mIOU |
+|------------|:-------------:|:-----------------:|
+| [Pascal VOC](https://github.com/albumentations-team/autoalbument-benchmarks#pascal-voc-semantic-segmentation) |     73.34     |     **75.55**     |
+| [Cityscapes](https://github.com/albumentations-team/autoalbument-benchmarks#cityscapes) |     79.47     |     **79.92**     |
+
+
 ## Installation
 AutoAlbument requires Python 3.6 or higher. To install the latest stable version from PyPI:
 
@@ -21,13 +41,20 @@ AutoAlbument requires Python 3.6 or higher. To install the latest stable version
 
 You can read the detailed description of all steps at [https://albumentations.ai/docs/autoalbument/how_to_use/](https://albumentations.ai/docs/autoalbument/how_to_use/)
 
-
 ## Examples
 The [`examples`](https://github.com/albumentations-team/autoalbument/tree/master/examples) directory contains example configs for different tasks and datasets:
-- [Image classification on the CIFAR10 dataset](https://github.com/albumentations-team/autoalbument/tree/master/examples/cifar10).
-- [Semantic segmentation on the Pascal VOC dataset](https://github.com/albumentations-team/autoalbument/tree/master/examples/pascal_voc).
+
+### Classification
+- [CIFAR10](https://github.com/albumentations-team/autoalbument/tree/master/examples/cifar10)
+- [SVHN](https://github.com/albumentations-team/autoalbument/tree/master/examples/svhn)
+- [ImageNet](https://github.com/albumentations-team/autoalbument/tree/master/examples/imagenet)
+
+### Semantic segmentation
+- [Pascal VOC](https://github.com/albumentations-team/autoalbument/tree/master/examples/pascal_voc)
+- [Cityscapes](https://github.com/albumentations-team/autoalbument/tree/master/examples/cityscapes)
 
 To run the search with an example config:
+
 ```
 autoalbument-search --config-dir </path/to/directory_with_dataset.py_and_search.yaml>
 ```
