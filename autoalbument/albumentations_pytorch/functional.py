@@ -1,14 +1,17 @@
 import random
 
 import torch
-import torch.nn.functional as F
 
-from autoalbument.faster_autoaugment.albumentations_pytorch.affine import (
-    get_scaling_matrix,
+from autoalbument.albumentations_pytorch.affine import (
     get_rotation_matrix,
+    get_scaling_matrix,
     warp_affine,
 )
-from autoalbument.faster_autoaugment.albumentations_pytorch.utils import MAX_VALUES_BY_DTYPE, TorchPadding, clipped
+from autoalbument.albumentations_pytorch.utils import (
+    MAX_VALUES_BY_DTYPE,
+    TorchPadding,
+    clipped,
+)
 
 
 def solarize(img_batch, threshold):

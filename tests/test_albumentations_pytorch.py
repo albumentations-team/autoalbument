@@ -3,7 +3,7 @@ import pytest
 import torch
 from torch.autograd import gradcheck
 
-import autoalbument.faster_autoaugment.albumentations_pytorch.functional as PF
+import autoalbument.albumentations_pytorch.functional as PF
 from tests.utils import assert_batches_match
 
 

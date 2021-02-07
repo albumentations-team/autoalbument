@@ -1,4 +1,5 @@
 import argparse
+import importlib.util
 import os
 
 from hydra.utils import to_absolute_path
@@ -31,3 +32,11 @@ def get_dataset_filepath(dataset_file):
         )
 
     return os.path.join(base_path, dataset_file)
+
+
+def get_dataset_cls(dataset_file, dataset_cls_name="SearchDataset"):
+    dataset_filepath = get_dataset_filepath(dataset_file)
+    spec = importlib.util.spec_from_file_location("dataset", dataset_filepath)
+    dataset = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(dataset)
+    return getattr(dataset, dataset_cls_name)

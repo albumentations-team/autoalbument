@@ -6,13 +6,12 @@ https://github.com/moskomule/dda/blob/master/dda/operations.py
 import warnings
 
 import albumentations as A
-import cv2
 import torch
 from torch import nn
 from torch.autograd import Function
 from torch.distributions import RelaxedBernoulli
 
-from autoalbument.faster_autoaugment.albumentations_pytorch import functional as F
+from autoalbument.albumentations_pytorch import functional as F
 from autoalbument.faster_autoaugment.utils import target_requires_grad
 
 

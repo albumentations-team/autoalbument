@@ -1,7 +1,5 @@
-import random
-
-import torch
 import numpy as np
+import torch
 
 
 def np_to_pytorch(np_array):

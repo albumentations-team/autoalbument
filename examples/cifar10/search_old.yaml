@@ -41,26 +41,6 @@ policy_model:
   # and increase the searching time.
   operation_count: 4
 
-  operations:
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
-      shift_r: true
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
-      shift_g: true
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
-      shift_b: true
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.RandomBrightness
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.RandomContrast
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Solarize
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.HorizontalFlip
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.VerticalFlip
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Rotate
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftX
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftY
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Scale
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedNumberOfHoles
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedSize
-
-
 # Settings for Classification Model that is used for two purposes:
 # 1. As a model that performs classification of input images.
 # 2. As a Discriminator for Policy Model.
@@ -159,6 +139,9 @@ data:
     drop_last: True
 
 optim:
+  # Number of epochs to search parameters of augmentations.
+  epochs:  40
+
   # Optimizer configuration for Classification Model
   main:
     _target_: torch.optim.Adam
@@ -171,28 +154,25 @@ optim:
     lr: 1e-3
     betas: [0, 0.999]
 
-trainer:
-  _target_: pytorch_lightning.Trainer
-  gpus: 1
-  benchmark: true
-  max_epochs: 40
-  resume_from_checkpoint: null
-  #precision: 16
-  checkpoint_callback: false
+# Device that will keep PyTorch Tensors and which will be used for training. Please refer to the PyTorch documentation
+# for more information -  https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device.
+device: cuda
 
-logger:
-  _target_:  pytorch_lightning.loggers.TensorBoardLogger
-  save_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
+# Value for torch.backends.cudnn.benchmark
+# https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
+cudnn_benchmark: True
 
-searcher:
-  _target_: autoalbument.faster_autoaugment.search.FasterAutoAugmentSearcher
+# If set to `True` AutoAlbument will save a checkpoint that contains states of models and optimizers at the end of each
+# epoch. Checkpoints will be saved to the directory `<working directory>/checkpoints`.
+save_checkpoints: True
 
-callbacks:
-  - _target_: autoalbument.callbacks.MonitorAverageParameterChange
-  - _target_: autoalbument.callbacks.SavePolicy
-  #- _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  #  save_last: true
-  #  dirpath: checkpoints
+# Path to a PyTorch checkpoint that contains saved states of models and optimizers. The value should be an absolute path
+# to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
+checkpoint_path: null
+
+# Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
+# this feature.
+tensorboard_logs_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
 
 seed: 42
 

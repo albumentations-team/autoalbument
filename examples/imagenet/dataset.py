@@ -1,6 +1,5 @@
-import torchvision
-
 import cv2
+import torchvision
 
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)
