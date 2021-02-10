@@ -5,21 +5,6 @@ task: classification
 # Settings for Policy Model that searches augmentation policies.
 policy_model:
 
-  # Multiplier for classification loss of a model. Faster AutoAugment uses classification loss to prevent augmentations
-  # from transforming images of a particular class to another class. The authors of Faster AutoAugment use 0.1 as
-  # default value.
-  task_factor: 0.1
-
-  # Multiplier for the gradient penalty for WGAN-GP training. 10 is the default value that was proposed in
-  # `Improved Training of Wasserstein GANs`.
-  gp_factor: 10
-
-  # Temperature for Relaxed Bernoulli distribution. The probability of applying a certain augmentation is sampled from
-  # Relaxed Bernoulli distribution (because Bernoulli distribution is not differentiable). With lower values of
-  # `temperature` Relaxed Bernoulli distribution behaves like Bernoulli distribution. In the paper, the authors
-  # of Faster AutoAugment used 0.05 as a default value for `temperature`.
-  temperature: 0.05
-
   # Number of augmentation sub-policies. When an image passes through an augmentation pipeline, Faster AutoAugment
   # randomly chooses one sub-policy and uses augmentations from that sub-policy to transform an input image. A larger
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
@@ -41,26 +26,6 @@ policy_model:
   # and increase the searching time.
   operation_count: 4
 
-  operations:
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
-      shift_r: true
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
-      shift_g: true
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
-      shift_b: true
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.RandomBrightness
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.RandomContrast
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Solarize
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.HorizontalFlip
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.VerticalFlip
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Rotate
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftX
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftY
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Scale
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedNumberOfHoles
-    - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedSize
-
-
 # Settings for Classification Model that is used for two purposes:
 # 1. As a model that performs classification of input images.
 # 2. As a Discriminator for Policy Model.
@@ -69,7 +34,7 @@ classification_model:
   # in the same directory with `search.yaml` and `dataset.py`.
   _target_: model.Cifar10ClassificationModel
 
-  #  # As an alternative, you could use a built-in AutoAldbument model using the following config:
+  #  # As an alternative, you could use a built-in AutoAlbument model using the following config:
   #  #  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
   #
   #  # Number of classes in the dataset. The dataset implementation should return an integer in the range
@@ -112,34 +77,6 @@ data:
     train: True
     download: True
 
-  # The data type of input images. Two values are supported:
-  # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
-  #   [0, 255].
-  # - float32. In that case, all input images should be NumPy arrays with the np.float32 data type and values in the
-  #   range [0.0, 1.0].
-  input_dtype: uint8
-
-  # A list of preprocessing augmentations that will be applied to each image before applying augmentations from
-  # a policy. A preprocessing augmentation should be defined as `key`: `value`, where `key` is the name of augmentation
-  # from Albumentations, and `value` is a dictionary with augmentation parameters. The found policy will also apply
-  # those preprocessing augmentations before applying the main augmentations.
-  #
-  # Here is an example of an augmentation pipeline that first pads an image to the size 512x512 pixels, then resizes
-  # the resulting image to the size 256x256 pixels and finally crops a random patch with the size 224x224 pixels.
-  #
-  #  preprocessing:
-  #    - PadIfNeeded:
-  #        min_height: 512
-  #        min_width: 512
-  #    - Resize:
-  #        height: 256
-  #        width: 256
-  #    - RandomCrop:
-  #        height: 224
-  #        width: 224
-  #
-  preprocessing: null
-
   # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
   # the normalization function will always receive a `float32` input with values in the range [0.0, 1.0], so you should
@@ -157,48 +94,3 @@ data:
     num_workers: 8
     pin_memory: True
     drop_last: True
-
-optim:
-  # Optimizer configuration for Classification Model
-  main:
-    _target_: torch.optim.Adam
-    lr: 1e-3
-    betas: [0, 0.999]
-
-  # Optimizer configuration for Policy Model
-  policy:
-    _target_: torch.optim.Adam
-    lr: 1e-3
-    betas: [0, 0.999]
-
-trainer:
-  _target_: pytorch_lightning.Trainer
-  gpus: 1
-  benchmark: true
-  max_epochs: 40
-  resume_from_checkpoint: null
-  #precision: 16
-  checkpoint_callback: false
-
-logger:
-  _target_:  pytorch_lightning.loggers.TensorBoardLogger
-  save_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
-
-searcher:
-  _target_: autoalbument.faster_autoaugment.search.FasterAutoAugmentSearcher
-
-callbacks:
-  - _target_: autoalbument.callbacks.MonitorAverageParameterChange
-  - _target_: autoalbument.callbacks.SavePolicy
-  #- _target_: pytorch_lightning.callbacks.ModelCheckpoint
-  #  save_last: true
-  #  dirpath: checkpoints
-
-seed: 42
-
-hydra:
-  run:
-    # Path to the directory that will contain all outputs produced by the search algorithm. `${config_dir:}` contains
-    # path to the directory with the `search.yaml` config file. Please refer to the Hydra documentation for more
-    # information - https://hydra.cc/docs/configure_hydra/workdir.
-    dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

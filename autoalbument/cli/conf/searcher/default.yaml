@@ -1,0 +1,3 @@
+# @package _group_
+
+_target_: autoalbument.faster_autoaugment.search.FasterAutoAugmentSearcher

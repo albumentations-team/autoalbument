@@ -3,8 +3,8 @@ from shutil import copyfile
 
 import click
 
+from autoalbument.cli.lib.config_builder import SearchConfigBuilder
 from autoalbument.utils.click import should_write_file
-from autoalbument.utils.templates import AutoAlbumentTemplate
 
 
 @click.command()
@@ -30,31 +30,30 @@ from autoalbument.utils.templates import AutoAlbumentTemplate
 def main(config_dir, task, num_classes, generate_full_config):
     config_dir = Path(config_dir)
     config_dir.mkdir(parents=True, exist_ok=True)
-    templates_dir = Path(__file__).parent.parent / "cli" / "templates"
-    dataset_file = templates_dir / task / "dataset.py.tmpl"
-    search_config_filename = "search_full.yaml.tmpl" if generate_full_config else "search.yaml.tmpl"
-    search_config_file = templates_dir / task / search_config_filename
+
+    resources_dir = Path(__file__).parent / "resources"
+    dataset_file = resources_dir / f"{task}_dataset.py.tmpl"
     dataset_file_destination = config_dir / "dataset.py"
     search_file_destination = config_dir / "search.yaml"
 
-    if should_write_file(search_file_destination):
-        with search_config_file.open() as f:
-            config = AutoAlbumentTemplate(f.read())
+    base_config_path = Path(__file__).parent / "conf" / "config.yaml"
+    short_config_keys_path = resources_dir / "short_config_keys.yaml"
+    search_config_builder = SearchConfigBuilder(
+        base_config_path,
+        short_config_keys_path=short_config_keys_path,
+        task=task,
+        num_classes=num_classes,
+        generate_full_config=generate_full_config,
+    )
 
-        with search_file_destination.open("w") as f:
-            f.write(
-                config.substitute(
-                    num_classes=num_classes,
-                    config_dir=config_dir,
-                    task=task,
-                )
-            )
+    if should_write_file(search_file_destination):
+        search_config_builder.write_config(search_file_destination)
 
     if should_write_file(dataset_file_destination):
         copyfile(dataset_file, dataset_file_destination)
 
     click.echo(
-        f"Files dataset.py and search.yaml are placed in {config_dir}.\n\n"
+        f"\nFiles dataset.py and search.yaml are placed in {config_dir}.\n\n"
         f"Next steps:\n"
         f"1. Add the required implementation for dataset methods in "
         + click.style(str(dataset_file_destination), bold=True)

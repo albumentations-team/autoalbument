@@ -31,7 +31,7 @@ setup(
         "albumentations>=0.5.1",
         "torch>=1.6.0",
         "hydra-core>=1.0",
-        "timm>=0.3.2",  # This version is required for segmentation-models-pytorch
+        "timm==0.3.2",  # This version is required for segmentation-models-pytorch
         "segmentation-models-pytorch>=0.1.3",
         "tqdm",
         "click",
@@ -42,6 +42,7 @@ setup(
         "console_scripts": [
             "autoalbument-create = autoalbument.cli.create:main",
             "autoalbument-search = autoalbument.cli.search:main",
+            "autoalbument-migrate = autoalbument.cli.migrate:main",
         ],
     },
     extras_require={"tests": ["pytest"]},

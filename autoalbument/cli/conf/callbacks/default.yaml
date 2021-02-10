@@ -1,0 +1,7 @@
+# @package _group_
+
+- _target_: autoalbument.callbacks.MonitorAverageParameterChange
+- _target_: autoalbument.callbacks.SavePolicy
+- _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  save_last: true
+  dirpath: checkpoints
