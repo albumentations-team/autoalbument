@@ -11,5 +11,5 @@ defaults:
   - callbacks: default
   - logger: default
   - hydra: default
-  - default
+  - seed
   - search
