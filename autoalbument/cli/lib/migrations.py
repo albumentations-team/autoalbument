@@ -3,12 +3,11 @@ import logging
 from abc import abstractmethod
 from pathlib import Path
 
-from ruamel.yaml import YAML
+from autoalbument.cli.lib.yaml import yaml
+
 
 log = logging.getLogger(__name__)
 
-
-yaml = YAML(typ="rt", pure=True)
 
 
 def pop_key(dct, key):
@@ -45,8 +44,11 @@ class MigrationOperation:
             old_value = pop_key(config, self.old_key)
         except KeyError:
             return config
-        log.info("Migrating {}")
+        message = f"Migrating {'.'.join(self.old_key)}: {old_value}"
+        if self.new_key:
+            message += f" to {'.'.join(self.new_key)}"
 
+        print(message)
         return self.apply(config, self.old_key, old_value, self.new_key)
 
     @staticmethod
@@ -66,7 +68,7 @@ class MigrateSaveCheckpoints(MigrationOperation):
     @staticmethod
     def apply(config, old_key, old_value, new_key):
         if not old_value:
-            callbacks_config_path = Path(__file__).parent / "conf" / "callbacks" / "default.yaml"
+            callbacks_config_path = Path(__file__).parent.parent / "conf" / "callbacks" / "default.yaml"
             callbacks_config = yaml.load(callbacks_config_path)
             callbacks_config = [
                 callback
@@ -112,7 +114,7 @@ def migrate_v1_to_v2(config):
     operations = [
         MoveOperation("optim.epochs", "trainer.max_epochs"),
         MoveOperation("cudnn_benchmark", "trainer.benchmark"),
-        MigrateSaveCheckpoints("save_checkpoints"),
+        MigrateSaveCheckpoints("save_checkpoints", "callbacks"),
         MigrateTensorboardLogsDir("tensorboard_logs_dir", "logger.save_dir"),
         MigrateDevice("device", "trainer.gpus"),
         MigrateCheckpointPath("checkpoint_path"),

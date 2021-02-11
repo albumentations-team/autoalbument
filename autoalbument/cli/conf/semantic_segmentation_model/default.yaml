@@ -1,6 +1,6 @@
 # @package _group_
 
-num_classes: ???
+num_classes: -1
   # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
   # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.
 

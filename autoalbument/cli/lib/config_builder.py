@@ -1,6 +1,6 @@
 from enum import Enum
 
-from ruamel.yaml import YAML
+from autoalbument.cli.lib.yaml import yaml
 
 
 class PackageType(str, Enum):
@@ -21,14 +21,6 @@ class SearchConfigBuilder:
             "num_classes": num_classes,
         }
         self.generate_full_config = generate_full_config
-        self.yaml = YAML(typ="rt", pure=True)
-        self.add_representers()
-
-    def add_representers(self):
-        def null_representer(self_, data):
-            return self_.represent_scalar("tag:yaml.org,2002:null", "null")
-
-        self.yaml.representer.add_representer(type(None), null_representer)
 
     @staticmethod
     def get_package_type(config_text):
@@ -42,16 +34,16 @@ class SearchConfigBuilder:
                 lines = f.readlines()
                 package_type = self.get_package_type(lines[0])
                 first_config_line = 1
-                return self.yaml.load("".join(lines[first_config_line:]) + "\n\n"), package_type
+                return yaml.load("".join(lines[first_config_line:]) + "\n\n"), package_type
 
         except FileNotFoundError:
             return None, None
 
     def build_full_config(self):
-        base_config = self.yaml.load(self.base_config_path)
+        base_config = yaml.load(self.base_config_path)
         parent_dir = self.base_config_path.parent
 
-        config = self.yaml.load("{}")
+        config = yaml.load("{}")
         for included_config_name in base_config["defaults"]:
             if isinstance(included_config_name, dict):
                 group, filename = next(iter(included_config_name.items()))
@@ -98,9 +90,9 @@ class SearchConfigBuilder:
     def write_config(self, config_file_destination):
         config = self.build_full_config()
         if not self.generate_full_config:
-            short_config_keys = self.yaml.load(self.short_config_keys_path)
+            short_config_keys = yaml.load(self.short_config_keys_path)
             config = self.delete_not_required_keys(config, short_config_keys)
         config = self.delete_unused_task_model_key(config)
         config = self.fill_missing_values(config)
         with open(config_file_destination, "w") as f:
-            self.yaml.dump(config, f)
+            yaml.dump(config, f)
