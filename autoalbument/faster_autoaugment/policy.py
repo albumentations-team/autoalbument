@@ -70,7 +70,7 @@ class SubPolicyStage(nn.Module):
                 f"Sum of all augmentation probabilities exceeds 1.0 and equals {p_sum}. "
                 "This may indicate an error in AutoAlbument. "
                 "Please report an issue at https://github.com/albumentations-team/autoalbument/issues.",
-                RuntimeWarning
+                RuntimeWarning,
             )
         transforms = []
         for operation, p in zip(self.operations, true_probabilities):
