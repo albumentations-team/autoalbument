@@ -4,6 +4,7 @@ https://github.com/moskomule/dda/blob/master/faster_autoaugment/policy.py
 """
 
 import random
+import warnings
 from copy import deepcopy
 from typing import Dict
 
@@ -28,6 +29,9 @@ from autoalbument.faster_autoaugment.operations import (
     VerticalFlip,
 )
 from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, target_requires_grad
+
+
+PROBABILITY_EPS = 0.01
 
 
 class SubPolicyStage(nn.Module):
@@ -60,14 +64,20 @@ class SubPolicyStage(nn.Module):
         weights = self.weights.detach().cpu().numpy().tolist()
         probabilities = [op.probability.item() for op in self.operations]
         true_probabilities = [w * p for (w, p) in zip(weights, probabilities)]
-        assert sum(true_probabilities) <= 1.0
+        p_sum = sum(true_probabilities)
+        if p_sum > 1.0 + PROBABILITY_EPS:
+            warnings.warn(
+                f"Sum of all augmentation probabilities exceeds 1.0 and equals {p_sum}. "
+                "This may indicate an error in AutoAlbument. "
+                "Please report an issue at https://github.com/albumentations-team/autoalbument/issues.",
+                RuntimeWarning,
+            )
         transforms = []
-        p_sum = 0
         for operation, p in zip(self.operations, true_probabilities):
             transforms.append(operation.create_transform(input_dtype, p))
-            p_sum += p
-        transforms.append(A.NoOp(p=1.0 - p_sum))
-        return OneOf(transforms, p=1)
+        if p_sum < 1.0:
+            transforms.append(A.NoOp(p=1.0 - p_sum))
+        return OneOf(transforms, p=1.0)
 
 
 class SubPolicy(nn.Module):
