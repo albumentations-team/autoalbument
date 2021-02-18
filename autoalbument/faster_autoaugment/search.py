@@ -19,7 +19,7 @@ class FasterAutoAugmentSearcher(SearcherBase):
         self.trainer = self.create_trainer()
 
     def set_seed(self):
-        seed = self.cfg.seed
+        seed = getattr(self.cfg, "seed", None)
         if seed is None:
             return
         seed_everything(seed)
