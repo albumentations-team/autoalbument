@@ -1,5 +1,7 @@
 # @package _global_
 
+_version: 2
+
 task: classification
 
 # Settings for Policy Model that searches augmentation policies.
@@ -165,4 +167,3 @@ trainer:
   benchmark: true
   gpus: 1
 
-_version: 2

@@ -1,5 +1,7 @@
 # @package _global_
 
+_version: 2
+
 task: classification
 
 # Settings for Policy Model that searches augmentation policies.
@@ -56,7 +58,7 @@ classification_model:
 
   # Boolean flag that indicates whether the selected model architecture should load pretrained weights or use randomly
   # initialized weights.
-  pretrained: False
+  pretrained: false
 
 data:
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using
@@ -81,8 +83,8 @@ data:
   #
   dataset:
     _target_: dataset.ImageNetSearchDataset
-    root: "~/data/imagenet"
-    split: "train"
+    root: ~/data/imagenet
+    split: train
 
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
@@ -111,12 +113,12 @@ data:
   #        width: 224
   #
   preprocessing:
-    - Resize:
-        height: 256
-        width: 256
-    - RandomCrop:
-        height: 224
-        width: 224
+  - Resize:
+      height: 256
+      width: 256
+  - RandomCrop:
+      height: 224
+      width: 224
 
   # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
@@ -131,16 +133,13 @@ data:
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 96
-    shuffle: True
+    shuffle: true
     num_workers: 8
-    pin_memory: True
-    drop_last: True
+    pin_memory: true
+    drop_last: true
 
 optim:
   # Number of epochs to search parameters of augmentations.
-  epochs:  1
-
-  # Optimizer configuration for Classification Model
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -151,27 +150,6 @@ optim:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
-
-# Device that will keep PyTorch Tensors and which will be used for training. Please refer to the PyTorch documentation
-# for more information -  https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device.
-device: cuda
-
-# Value for torch.backends.cudnn.benchmark
-# https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
-cudnn_benchmark: True
-
-# If set to `True` AutoAlbument will save a checkpoint that contains states of models and optimizers at the end of each
-# epoch. Checkpoints will be saved to the directory `<working directory>/checkpoints`.
-save_checkpoints: False
-
-# Path to a PyTorch checkpoint that contains saved states of models and optimizers. The value should be an absolute path
-# to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
-checkpoint_path: null
-
-# Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
-# this feature.
-tensorboard_logs_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
-
 seed: 42
 
 hydra:
@@ -180,3 +158,17 @@ hydra:
     # path to the directory with the `search.yaml` config file. Please refer to the Hydra documentation for more
     # information - https://hydra.cc/docs/configure_hydra/workdir.
     dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+trainer:
+  max_epochs: 1
+  benchmark: true
+  gpus: 1
+
+callbacks:
+- _target_: autoalbument.callbacks.MonitorAverageParameterChange
+- _target_: autoalbument.callbacks.SavePolicy
+
+logger:
+  save_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
+
+
