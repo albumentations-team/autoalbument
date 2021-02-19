@@ -57,7 +57,7 @@ jobs:
     - name: Update pip
       run: python -m pip install --upgrade pip
     - name: Install isort and Black
-      run: pip install black==20.8b1
+      run: pip install isort==5.7.0 black==20.8b1
     - name: Run isort
       run: isort --check-only .
     - name: Run Black
