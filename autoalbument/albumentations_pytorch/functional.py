@@ -69,8 +69,14 @@ def cutout(img_batch, num_holes, hole_size, fill_value=0):
     img_batch = img_batch.clone()
     height, width = img_batch.shape[-2:]
     for _n in range(num_holes):
-        y1 = torch.randint(0, height - hole_size, (1,))
-        x1 = torch.randint(0, width - hole_size, (1,))
+        if height == hole_size:
+            y1 = torch.tensor([0])
+        else:
+            y1 = torch.randint(0, height - hole_size, (1,))
+        if width == hole_size:
+            x1 = torch.tensor([0])
+        else:
+            x1 = torch.randint(0, width - hole_size, (1,))
         y2 = y1 + hole_size
         x2 = x1 + hole_size
         img_batch[:, :, y1:y2, x1:x2] = fill_value
