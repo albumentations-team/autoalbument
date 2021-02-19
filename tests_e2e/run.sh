@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+export HYDRA_FULL_ERROR=1
 
 SCRIPTPATH="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 CONFIG_BASE_DIR=$SCRIPTPATH/configs
@@ -19,7 +20,7 @@ test_search_from_create () {
   echo $CONFIG_DIR $TASK
   autoalbument-create --config-dir $CONFIG_DIR --task $TASK --num-classes 10
   cp $CONFIG_DIR/dataset_implementation.py $CONFIG_DIR/dataset.py
-  autoalbument-search --config-dir $CONFIG_DIR device=cpu semantic_segmentation_model.pretrained=False optim.epochs=1
+  autoalbument-search --config-dir $CONFIG_DIR trainer.gpus=0 semantic_segmentation_model.pretrained=False trainer.max_epochs=1
 }
 
 test_search_from_create_relative_directory () {
@@ -28,7 +29,7 @@ test_search_from_create_relative_directory () {
   echo $CONFIG_DIR $TASK
   autoalbument-create --config-dir $CONFIG_DIR --task $TASK --num-classes 10
   cp $CONFIG_DIR/dataset_implementation.py $CONFIG_DIR/dataset.py
-  autoalbument-search --config-dir $CONFIG_DIR device=cpu semantic_segmentation_model.pretrained=False optim.epochs=1
+  autoalbument-search --config-dir $CONFIG_DIR trainer.gpus=0 semantic_segmentation_model.pretrained=False trainer.max_epochs=1
 }
 
 
@@ -38,7 +39,7 @@ test_search_from_create_full_config () {
   echo $CONFIG_DIR $TASK
   autoalbument-create --config-dir $CONFIG_DIR --task $TASK --num-classes 10 --generate-full-config
   cp $CONFIG_DIR/dataset_implementation.py $CONFIG_DIR/dataset.py
-  autoalbument-search --config-dir $CONFIG_DIR device=cpu
+  autoalbument-search --config-dir $CONFIG_DIR trainer.gpus=0 trainer.max_epochs=1
 }
 
 

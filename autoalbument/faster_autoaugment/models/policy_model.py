@@ -19,7 +19,6 @@ from autoalbument.faster_autoaugment.utils import (
     target_requires_grad,
 )
 
-
 PROBABILITY_EPS = 0.01
 
 

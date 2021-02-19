@@ -8,7 +8,7 @@ class PackageType(str, Enum):
     global_ = "_global_"
 
 
-MISSING_VALUE_PLACEHOLDER = "???"
+MISSING_VALUE_PLACEHOLDER = "_MISSING_"
 
 
 class SearchConfigBuilder:
@@ -43,7 +43,7 @@ class SearchConfigBuilder:
         base_config = yaml.load(self.base_config_path)
         parent_dir = self.base_config_path.parent
 
-        config = yaml.load("{}")
+        config = yaml.load("# @package _global_\n\n{}")
         for included_config_name in base_config["defaults"]:
             if isinstance(included_config_name, dict):
                 group, filename = next(iter(included_config_name.items()))

@@ -29,6 +29,7 @@ class FAABaseModel(pl.LightningModule):
 
     def create_main_model(self):
         model_cfg = self.get_main_model_cfg()
+        print(model_cfg)
         main_model = instantiate(model_cfg)
         return main_model
 

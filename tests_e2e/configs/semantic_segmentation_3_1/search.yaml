@@ -12,7 +12,7 @@ semantic_segmentation_model:
   num_classes: 10
   architecture: Unet
   encoder_architecture: resnet18
-  pretrained: False
+  pretrained: false
 
 
 data:
@@ -20,9 +20,9 @@ data:
     _target_: dataset.SearchDataset
   input_dtype: uint8
   preprocessing:
-    - Resize:
-        height: 128
-        width: 128
+  - Resize:
+      height: 128
+      width: 128
 
   dataloader:
     _target_: torch.utils.data.DataLoader
@@ -30,7 +30,6 @@ data:
     num_workers: 0
 
 optim:
-  epochs: 1
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -40,11 +39,12 @@ optim:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
-
-device: cpu
-
 seed: 42
 
 hydra:
   run:
     dir: ${config_dir:}/outputs
+trainer:
+  max_epochs: 1
+  gpus: 0
+_version: 2

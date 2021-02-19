@@ -1,6 +1,8 @@
 # @package _group_
 
-num_classes: -1
+_target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
+
+num_classes: _MISSING_
   # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
   # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.
 
@@ -9,7 +11,7 @@ architecture: Unet
   # https://github.com/qubvel/segmentation_models.pytorch. Please refer to its documentation to get a list of available
   # models - https://github.com/qubvel/segmentation_models.pytorch#models-.
 
-encoder_architecture: se_resnext50_32x4d
+encoder_architecture: resnet18
   # The architecture of encoder in Semantic Segmentation Model. Please refer to Segmentation Models' documentation to
   # get a list of available encoders - https://github.com/qubvel/segmentation_models.pytorch#encoders-
 

@@ -1,12 +1,14 @@
 # @package _group_
 
+dataset:
+  _target_: dataset.SearchDataset
+
 input_dtype: uint8
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
   #   [0, 255].
   # - float32. In that case, all input images should be NumPy arrays with the np.float32 data type and values in the
   #   range [0.0, 1.0].
-
 
 preprocessing: null
   # A list of preprocessing augmentations that will be applied to each image before applying augmentations from
@@ -43,7 +45,7 @@ dataloader:
   # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
   # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   _target_: torch.utils.data.DataLoader
-  batch_size: 128
+  batch_size: 16
   shuffle: True
   num_workers: 8
   pin_memory: True

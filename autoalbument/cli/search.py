@@ -3,12 +3,11 @@ import os
 import sys
 from pathlib import Path
 
+import colorama
 import hydra
+from colorama import Style
 from hydra.utils import instantiate
 from omegaconf import OmegaConf
-import colorama
-from colorama import Style
-
 
 from autoalbument.config.validation import validate_cfg
 from autoalbument.utils.hydra import get_config_dir

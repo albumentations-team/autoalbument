@@ -170,5 +170,3 @@ callbacks:
 
 logger:
   save_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
-
-

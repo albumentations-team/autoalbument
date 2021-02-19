@@ -4,11 +4,13 @@
 # 1. As a model that performs classification of input images.
 # 2. As a Discriminator for Policy Model.
 
-num_classes: -1
+_target_: autoalbument.faster_autoaugment.models.ClassificationModel
+
+num_classes: _MISSING_
 # Number of classes in the dataset. The dataset implementation should return an integer in the range
 # [0, num_classes - 1] as a class label of an image.
 
-architecture: resnet50
+architecture: resnet18
 # The architecture of Classification Model. AutoAlbument uses models from
 # https://github.com/rwightman/pytorch-image-models/. Please refer to its documentation to get a list of
 # available models - https://rwightman.github.io/pytorch-image-models/#list-models-with-pretrained-weights.

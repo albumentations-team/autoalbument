@@ -76,5 +76,3 @@ callbacks:
 - _target_: autoalbument.callbacks.SavePolicy
 
 logger: null
-
-

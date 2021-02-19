@@ -5,9 +5,7 @@ from pathlib import Path
 
 from autoalbument.cli.lib.yaml import yaml
 
-
 log = logging.getLogger(__name__)
-
 
 
 def pop_key(dct, key):
