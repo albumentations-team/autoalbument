@@ -58,8 +58,13 @@ class SearchConfigBuilder:
             if package_type == PackageType.group_:
                 config[group] = inc_config
             else:
-                config.update(inc_config)
-
+                for k, v in inc_config.items():
+                    try:
+                        comment = [item for item in inc_config.ca.items[k] if item is not None][0].value
+                    except:  # noqa E722
+                        comment = None
+                    print(comment)
+                    config.insert(1, k, v, comment=comment)
         return config
 
     def fill_missing_values(self, config):

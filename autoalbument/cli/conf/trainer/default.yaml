@@ -1,9 +1,8 @@
 # @package _group_
 
+_target_: pytorch_lightning.Trainer
 # Configuration for PyTorch Lightning Trainer. You can read more about Trainer and its arguments at
 # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html.
-
-_target_: pytorch_lightning.Trainer
 
 gpus: 1
 # Number of GPUs to train on. Set to `0` or None` to use CPU for training.

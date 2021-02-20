@@ -38,9 +38,7 @@ operation_count: 4
 # a model trained on augmented images. Simultaneously, larger values of `operation_count` affect the speed of search
 # and increase the searching time.
 
-
 operations:
-# A list of augmentation operations that will be applied to input data.
   - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
     shift_r: true
   - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
@@ -58,3 +56,4 @@ operations:
   - _target_: autoalbument.faster_autoaugment.models.policy_operations.Scale
   - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedNumberOfHoles
   - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedSize
+  # A list of augmentation operations that will be applied to input data.

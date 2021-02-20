@@ -2,12 +2,10 @@ from pathlib import Path
 from shutil import copyfile
 
 import click
-from ruamel.yaml import YAML
 
 from autoalbument.cli.lib.migrations import migrate_v1_to_v2
+from autoalbument.cli.lib.yaml import yaml
 from autoalbument.utils.click import should_write_file
-
-yaml = YAML(typ="rt", pure=True)
 
 
 @click.command()
