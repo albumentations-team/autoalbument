@@ -1,3 +1,4 @@
 # @package _global_
 
+# Deep learning task. Should either be `classification` or `semantic_segmentation`.
 task: _MISSING_

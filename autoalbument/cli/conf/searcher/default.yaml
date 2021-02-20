@@ -1,3 +1,5 @@
 # @package _group_
 
+# Class for Searcher that is used to discover augmentation policies. You can create your own Searcher to alter
+# the behavior of AutoAlbument.
 _target_: autoalbument.faster_autoaugment.search.FasterAutoAugmentSearcher
