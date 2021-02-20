@@ -1,7 +1,7 @@
 # @package _group_
 
 main:
-  # Optimizer configuration for Classification Model
+  # Optimizer configuration for the main (either Classification or Semantic Segmentation) Model
   _target_: torch.optim.Adam
   lr: 1e-3
   betas: [0, 0.999]

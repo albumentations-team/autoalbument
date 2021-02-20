@@ -1,8 +1,10 @@
 # @package _global_
 
-_version: 2
+_version: 2  # An internal value that indicates a version of the config schema. This value is used by
+# `autoalbument-search` and `autoalbument-migrate` to upgrade the config to the latest version if necessary.
+# Please do not change it manually.
 
-task: classification
+task: classification # Deep learning task. Should either be `classification` or `semantic_segmentation`.
 
 # Settings for Policy Model that searches augmentation policies.
 policy_model:
@@ -152,7 +154,9 @@ optim:
     lr: 1e-3
     betas: [0, 0.999]
 
-seed: 42
+seed: 42 # Random seed. If the value is not null, it will be passed to `seed_everything` -
+# https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.utilities.seed.html?highlight=seed_everything
+
 
 hydra:
   run:
@@ -162,13 +166,16 @@ hydra:
     dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
 
 trainer:
+  # Configuration for PyTorch Lightning Trainer. You can read more about Trainer and its arguments at
+  # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html.
   max_epochs: 4
+  # Number of epochs to search for augmentation parameters.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#max-epochs
+
   benchmark: true
+  # If true enables cudnn.benchmark.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#benchmark
+
   gpus: 1
-
-callbacks:
-- _target_: autoalbument.callbacks.MonitorAverageParameterChange
-- _target_: autoalbument.callbacks.SavePolicy
-
-logger:
-  save_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
+  # Number of GPUs to train on. Set to `0` or None` to use CPU for training.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus

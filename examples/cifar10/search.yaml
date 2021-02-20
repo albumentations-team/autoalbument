@@ -1,57 +1,62 @@
 # @package _global_
 
-_version: 2
+_version: 2  # An internal value that indicates a version of the config schema. This value is used by
+# `autoalbument-search` and `autoalbument-migrate` to upgrade the config to the latest version if necessary.
+# Please do not change it manually.
 
-task: classification
 
-# Settings for Policy Model that searches augmentation policies.
+task: classification # Deep learning task. Should either be `classification` or `semantic_segmentation`.
+
+
 policy_model:
+  # Settings for Policy Model that searches augmentation policies.
 
+  task_factor: 0.1
   # Multiplier for classification loss of a model. Faster AutoAugment uses classification loss to prevent augmentations
   # from transforming images of a particular class to another class. The authors of Faster AutoAugment use 0.1 as
   # default value.
-  task_factor: 0.1
 
+  gp_factor: 10
   # Multiplier for the gradient penalty for WGAN-GP training. 10 is the default value that was proposed in
   # `Improved Training of Wasserstein GANs`.
-  gp_factor: 10
 
+  temperature: 0.05
   # Temperature for Relaxed Bernoulli distribution. The probability of applying a certain augmentation is sampled from
   # Relaxed Bernoulli distribution (because Bernoulli distribution is not differentiable). With lower values of
   # `temperature` Relaxed Bernoulli distribution behaves like Bernoulli distribution. In the paper, the authors
   # of Faster AutoAugment used 0.05 as a default value for `temperature`.
-  temperature: 0.05
 
+  num_sub_policies: 100
   # Number of augmentation sub-policies. When an image passes through an augmentation pipeline, Faster AutoAugment
   # randomly chooses one sub-policy and uses augmentations from that sub-policy to transform an input image. A larger
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
   # augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
   # space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
-  num_sub_policies: 100
 
+  num_chunks: 8
   # Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
   # applies the same sub-policy with the same parameters to each image in a chunk. This parameter controls the tradeoff
   # between the speed of augmentation search and diversity of augmentations. Larger `num_chunks` values will lead to
   # faster searching but less diverse set of augmentations. Note that this parameter is used only in the searching
   # phase. When you train a model with found sub-policies, Albumentations will apply a distinct set of transformations
   # to each image separately.
-  num_chunks: 8
 
+  operation_count: 4
   # Number of consecutive augmentations in each sub-policy. Faster AutoAugment will sequentially apply `operation_count`
   # augmentations from a sub-policy to an image. Larger values of `operation_count` lead to better performance of
   # a model trained on augmented images. Simultaneously, larger values of `operation_count` affect the speed of search
   # and increase the searching time.
-  operation_count: 4
 
-# Settings for Classification Model that is used for two purposes:
-# 1. As a model that performs classification of input images.
-# 2. As a Discriminator for Policy Model.
+
 classification_model:
+  # Settings for Classification Model that is used for two purposes:
+  # 1. As a model that performs classification of input images.
+  # 2. As a Discriminator for Policy Model.
+
+  _target_: model.Cifar10ClassificationModel
   # A custom classification model is used. This model is defined inside the `model.py` file which is located
   # in the same directory with `search.yaml` and `dataset.py`.
-  _target_: model.Cifar10ClassificationModel
-
-  #  # As an alternative, you could use a built-in AutoAldbument model using the following config:
+  #  # As an alternative, you could use a built-in AutoAlbument model using the following config:
   #  #  _target_: autoalbument.faster_autoaugment.models.ClassificationModel
   #
   #  # Number of classes in the dataset. The dataset implementation should return an integer in the range
@@ -69,6 +74,11 @@ classification_model:
 
 
 data:
+  dataset:
+    _target_: dataset.Cifar10SearchDataset
+    root: ~/data/cifar10
+    train: true
+    download: true
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using
   # the `instantiate` method from Hydra - https://hydra.cc/docs/next/patterns/instantiate_objects/overview/.
   #
@@ -89,19 +99,15 @@ data:
   # - Example of an absolute path:
   # dataset_file: /projects/pytorch/dataset.py
   #
-  dataset:
-    _target_: dataset.Cifar10SearchDataset
-    root: ~/data/cifar10
-    train: true
-    download: true
 
+  input_dtype: uint8
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
   #   [0, 255].
   # - float32. In that case, all input images should be NumPy arrays with the np.float32 data type and values in the
   #   range [0.0, 1.0].
-  input_dtype: uint8
 
+  preprocessing: null
   # A list of preprocessing augmentations that will be applied to each image before applying augmentations from
   # a policy. A preprocessing augmentation should be defined as `key`: `value`, where `key` is the name of augmentation
   # from Albumentations, and `value` is a dictionary with augmentation parameters. The found policy will also apply
@@ -121,18 +127,15 @@ data:
   #        height: 224
   #        width: 224
   #
-  preprocessing: null
 
+  normalization:
+    mean: [0.4914, 0.4822, 0.4465]
+    std: [0.247, 0.243, 0.261]
   # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
   # the normalization function will always receive a `float32` input with values in the range [0.0, 1.0], so you should
   # define `mean` and `std` values accordingly.
-  normalization:
-    mean: [0.4914, 0.4822, 0.4465]
-    std: [0.247, 0.243, 0.261]
 
-  # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
-  # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 128
@@ -140,29 +143,48 @@ data:
     num_workers: 8
     pin_memory: true
     drop_last: true
+  # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
+  # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
+
 
 optim:
-  # Number of epochs to search parameters of augmentations.
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
+  # Optimizer configuration for the main (either Classification or Semantic Segmentation) Model
 
-  # Optimizer configuration for Policy Model
   policy:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
-seed: 42
+  # Optimizer configuration for Policy Model
+
+
+seed: 42 # Random seed. If the value is not null, it will be passed to `seed_everything` -
+# https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.utilities.seed.html?highlight=seed_everything
+
 
 hydra:
   run:
+    dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
     # Path to the directory that will contain all outputs produced by the search algorithm. `${config_dir:}` contains
     # path to the directory with the `search.yaml` config file. Please refer to the Hydra documentation for more
     # information - https://hydra.cc/docs/configure_hydra/workdir.
-    dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
 
 trainer:
+  # Configuration for PyTorch Lightning Trainer. You can read more about Trainer and its arguments at
+  # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html.
+
   max_epochs: 40
+  # Number of epochs to search for augmentation parameters.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#max-epochs
+
   benchmark: true
+  # If true enables cudnn.benchmark.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#benchmark
+
   gpus: 1
+  # Number of GPUs to train on. Set to `0` or None` to use CPU for training.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus

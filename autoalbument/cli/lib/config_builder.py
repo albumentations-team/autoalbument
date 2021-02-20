@@ -63,7 +63,6 @@ class SearchConfigBuilder:
                         comment = [item for item in inc_config.ca.items[k] if item is not None][0].value
                     except:  # noqa E722
                         comment = None
-                    print(comment)
                     config.insert(1, k, v, comment=comment)
         return config
 
