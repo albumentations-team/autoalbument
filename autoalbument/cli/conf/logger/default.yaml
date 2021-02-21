@@ -1,0 +1,8 @@
+# @package _group_
+
+# Configuration for a PyTorch Lightning logger.
+# You can read more about loggers at https://pytorch-lightning.readthedocs.io/en/stable/extensions/logging.html
+# By default, TensorBoardLogger is used.
+
+_target_:  pytorch_lightning.loggers.TensorBoardLogger
+save_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs

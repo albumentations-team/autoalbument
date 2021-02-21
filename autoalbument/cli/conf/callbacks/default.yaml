@@ -1,0 +1,19 @@
+# @package _group_
+
+# A list of PyTorch Lightning callbacks. Documentation on callbacks is available at
+# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html
+
+- _target_: autoalbument.callbacks.MonitorAverageParameterChange
+# Prints the "Average Parameter Change" metric at the end of each epoch.
+# Read more about this metric at https://albumentations.ai/docs/autoalbument/metrics/#average-parameter-change
+
+- _target_: autoalbument.callbacks.SavePolicy
+# Saves augmentation policies at the end of each epoch. You can load saved policies with Albumentations to create
+# an augmentation pipeline.
+
+- _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  save_last: true
+  dirpath: checkpoints
+# Saves a checkpoint at the end of each epoch. The checkpoint will contain all the necessary data to resume training.
+# More information about this checkpoint -
+# https://pytorch-lightning.readthedocs.io/en/latest/extensions/generated/pytorch_lightning.callbacks.ModelCheckpoint.html

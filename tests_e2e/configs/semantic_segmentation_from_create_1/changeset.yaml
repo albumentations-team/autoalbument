@@ -8,12 +8,12 @@ data:
     - Resize:
         height: 128
         width: 128
-device: cpu
+trainer:
+  max_epochs: 1
+  gpus: 0
 hydra:
   run:
     dir: ${config_dir:}/outputs
-optim:
-  epochs: 1
 policy_model:
   num_sub_policies: 10
 seed: 42

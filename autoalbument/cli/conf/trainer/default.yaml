@@ -1,0 +1,21 @@
+# @package _group_
+
+_target_: pytorch_lightning.Trainer
+# Configuration for PyTorch Lightning Trainer. You can read more about Trainer and its arguments at
+# https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html.
+
+gpus: 1
+# Number of GPUs to train on. Set to `0` or None` to use CPU for training.
+# More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus
+
+benchmark: true
+# If true enables cudnn.benchmark.
+# More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#benchmark
+
+max_epochs: 20
+# Number of epochs to search for augmentation parameters.
+# More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#max-epochs
+
+resume_from_checkpoint: null
+# Path to a checkpoint to resume training from it. More detailed description -
+# https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#resume-from-checkpoint

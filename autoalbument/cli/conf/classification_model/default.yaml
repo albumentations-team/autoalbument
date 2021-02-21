@@ -1,0 +1,22 @@
+# @package _group_
+
+# Settings for Classification Model that is used for two purposes:
+# 1. As a model that performs classification of input images.
+# 2. As a Discriminator for Policy Model.
+
+_target_: autoalbument.faster_autoaugment.models.ClassificationModel
+# Python class for instantiating Classification Model. You can read more about overriding this value
+# to use a custom model at https://albumentations.ai/docs/autoalbument/custom_model/
+
+num_classes: _MISSING_
+# Number of classes in the dataset. The dataset implementation should return an integer in the range
+# [0, num_classes - 1] as a class label of an image.
+
+architecture: resnet18
+# Architecture of Classification Model. The default implementation of Classification model in AutoAlbument uses
+# models from https://github.com/rwightman/pytorch-image-models/. Please refer to its documentation to get a list of
+# available models - https://rwightman.github.io/pytorch-image-models/#list-models-with-pretrained-weights.
+
+pretrained: False
+# Boolean flag that indicates whether the selected model architecture should load pretrained weights or use randomly
+# initialized weights.

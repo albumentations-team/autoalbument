@@ -1,6 +1,10 @@
 # @package _global_
 
-task: classification
+_version: 2  # An internal value that indicates a version of the config schema. This value is used by
+# `autoalbument-search` and `autoalbument-migrate` to upgrade the config to the latest version if necessary.
+# Please do not change it manually.
+
+task: classification # Deep learning task. Should either be `classification` or `semantic_segmentation`.
 
 # Settings for Policy Model that searches augmentation policies.
 policy_model:
@@ -88,7 +92,7 @@ data:
   #
   dataset:
     _target_: dataset.ConcatSVHNSearchDataset
-    root: "~/data/svhn"
+    root: ~/data/svhn
     download: true
 
   # The data type of input images. Two values are supported:
@@ -132,16 +136,13 @@ data:
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 128
-    shuffle: True
+    shuffle: true
     num_workers: 8
-    pin_memory: True
-    drop_last: True
+    pin_memory: true
+    drop_last: true
 
 optim:
   # Number of epochs to search parameters of augmentations.
-  epochs:  4
-
-  # Optimizer configuration for Classification Model
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -153,27 +154,9 @@ optim:
     lr: 1e-3
     betas: [0, 0.999]
 
-# Device that will keep PyTorch Tensors and which will be used for training. Please refer to the PyTorch documentation
-# for more information -  https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device.
-device: cuda
+seed: 42 # Random seed. If the value is not null, it will be passed to `seed_everything` -
+# https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.utilities.seed.html?highlight=seed_everything
 
-# Value for torch.backends.cudnn.benchmark
-# https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
-cudnn_benchmark: True
-
-# If set to `True` AutoAlbument will save a checkpoint that contains states of models and optimizers at the end of each
-# epoch. Checkpoints will be saved to the directory `<working directory>/checkpoints`.
-save_checkpoints: False
-
-# Path to a PyTorch checkpoint that contains saved states of models and optimizers. The value should be an absolute path
-# to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
-checkpoint_path: null
-
-# Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
-# this feature.
-tensorboard_logs_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
-
-seed: 42
 
 hydra:
   run:
@@ -181,3 +164,18 @@ hydra:
     # path to the directory with the `search.yaml` config file. Please refer to the Hydra documentation for more
     # information - https://hydra.cc/docs/configure_hydra/workdir.
     dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+trainer:
+  # Configuration for PyTorch Lightning Trainer. You can read more about Trainer and its arguments at
+  # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html.
+  max_epochs: 4
+  # Number of epochs to search for augmentation parameters.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#max-epochs
+
+  benchmark: true
+  # If true enables cudnn.benchmark.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#benchmark
+
+  gpus: 1
+  # Number of GPUs to train on. Set to `0` or None` to use CPU for training.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus

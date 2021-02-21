@@ -1,0 +1,33 @@
+_version:
+
+task:
+
+policy_model:
+  num_sub_policies:
+  num_chunks:
+
+classification_model:
+  num_classes:
+  architecture:
+  pretrained:
+
+semantic_segmentation_model:
+  num_classes:
+  architecture:
+  encoder_architecture:
+  pretrained:
+
+data:
+  dataset:
+    _target_:
+
+  dataloader:
+    batch_size:
+
+  normalization:
+    mean:
+    std:
+
+trainer:
+  gpus:
+  max_epochs:

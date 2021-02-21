@@ -1,0 +1,7 @@
+# @package _group_
+
+run:
+  dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  # Path to the directory that will contain all outputs produced by the search algorithm. `${config_dir:}` contains
+  # path to the directory with the `search.yaml` config file. Please refer to the Hydra documentation for more
+  # information - https://hydra.cc/docs/configure_hydra/workdir.

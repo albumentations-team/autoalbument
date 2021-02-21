@@ -1,0 +1,5 @@
+# @package _global_
+
+_version: 2 # An internal value that indicates a version of the config schema. This value is used by
+# `autoalbument-search` and `autoalbument-migrate` to upgrade the config to the latest version if necessary.
+# Please do not change it manually.

@@ -13,7 +13,7 @@ policy_model:
 classification_model:
   num_classes: 10
   architecture: resnet18
-  pretrained: False
+  pretrained: false
 
 data:
   dataset_file: dataset.py
@@ -26,13 +26,12 @@ data:
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 16
-    shuffle: True
+    shuffle: true
     num_workers: 0
-    pin_memory: True
-    drop_last: True
+    pin_memory: true
+    drop_last: true
 
 optim:
-  epochs:  1
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -41,16 +40,17 @@ optim:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
-
-device: cpu
-
-cudnn_benchmark: True
-save_checkpoints: False
-checkpoint_path: null
-tensorboard_logs_dir: null
-
 seed: 42
 
 hydra:
   run:
     dir: ${config_dir:}/outputs
+trainer:
+  max_epochs: 1
+  benchmark: true
+  gpus: 0
+callbacks:
+- _target_: autoalbument.callbacks.MonitorAverageParameterChange
+- _target_: autoalbument.callbacks.SavePolicy
+logger: null
+_version: 2

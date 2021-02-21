@@ -1,5 +1,7 @@
 task: classification
 
+_version: 2
+
 policy_model:
   task_factor: 0.1
   gp_factor: 10
@@ -8,12 +10,31 @@ policy_model:
   num_chunks: 8
   operation_count: 4
 
+  operations:
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
+      shift_r: true
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
+      shift_g: true
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftRGB
+      shift_b: true
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.RandomBrightness
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.RandomContrast
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Solarize
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.HorizontalFlip
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.VerticalFlip
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Rotate
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftX
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.ShiftY
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.Scale
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedNumberOfHoles
+    - _target_: autoalbument.faster_autoaugment.models.policy_operations.CutoutFixedSize
+
 
 classification_model:
   _target_: autoalbument.faster_autoaugment.models.ClassificationModel
   num_classes: 10
   architecture: resnet18
-  pretrained: False
+  pretrained: false
 
 data:
   dataset_file: dataset.py
@@ -26,13 +47,12 @@ data:
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 16
-    shuffle: True
+    shuffle: true
     num_workers: 0
-    pin_memory: False
-    drop_last: True
+    pin_memory: false
+    drop_last: true
 
 optim:
-  epochs:  1
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -42,9 +62,17 @@ optim:
     lr: 1e-3
     betas: [0, 0.999]
 
-device: cpu
+searcher:
+  _target_: autoalbument.faster_autoaugment.search.FasterAutoAugmentSearcher
 
-cudnn_benchmark: False
-save_checkpoints: False
-checkpoint_path: null
-tensorboard_logs_dir: null
+trainer:
+  _target_: pytorch_lightning.Trainer
+  max_epochs: 1
+  benchmark: false
+  gpus: 0
+
+callbacks:
+- _target_: autoalbument.callbacks.MonitorAverageParameterChange
+- _target_: autoalbument.callbacks.SavePolicy
+
+logger: null

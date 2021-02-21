@@ -1,76 +1,88 @@
 # @package _global_
 
-task: semantic_segmentation
+_version: 2  # An internal value that indicates a version of the config schema. This value is used by
+# `autoalbument-search` and `autoalbument-migrate` to upgrade the config to the latest version if necessary.
+# Please do not change it manually.
 
-# Settings for Policy Model that searches augmentation policies.
+
+task: semantic_segmentation # Deep learning task. Should either be `classification` or `semantic_segmentation`.
+
+
 policy_model:
+  # Settings for Policy Model that searches augmentation policies.
 
+  task_factor: 0.1
   # Multiplier for segmentation loss of a model. Faster AutoAugment uses segmentation loss to prevent augmentations
   # from transforming images of a particular class to another class.
-  task_factor: 0.1
 
+  gp_factor: 10
   # Multiplier for the gradient penalty for WGAN-GP training. 10 is the default value that was proposed in
   # `Improved Training of Wasserstein GANs`.
-  gp_factor: 10
 
+  temperature: 0.05
   # Temperature for Relaxed Bernoulli distribution. The probability of applying a certain augmentation is sampled from
   # Relaxed Bernoulli distribution (because Bernoulli distribution is not differentiable). With lower values of
   # `temperature` Relaxed Bernoulli distribution behaves like Bernoulli distribution. In the paper, the authors
   # of Faster AutoAugment used 0.05 as a default value for `temperature`.
-  temperature: 0.05
 
+  num_sub_policies: 25
   # Number of augmentation sub-policies. When an image passes through an augmentation pipeline, Faster AutoAugment
   # randomly chooses one sub-policy and uses augmentations from that sub-policy to transform an input image. A larger
   # number of sub-policies leads to a more diverse set of augmentations and better performance of a model trained on
   # augmented images. However, an increase in the number of sub-policies leads to the exponential growth of a search
   # space of augmentations, so you need more training data for Policy Model to find good augmentation policies.
-  num_sub_policies: 25
 
+  num_chunks: 4
   # Number of chunks in a batch. Faster AutoAugment splits each batch of images into `num_chunks` chunks. Then it
   # applies the same sub-policy with the same parameters to each image in a chunk. This parameter controls the tradeoff
   # between the speed of augmentation search and diversity of augmentations. Larger `num_chunks` values will lead to
   # faster searching but less diverse set of augmentations. Note that this parameter is used only in the searching
   # phase. When you train a model with found sub-policies, Albumentations will apply a distinct set of transformations
   # to each image separately.
-  num_chunks: 4
 
+  operation_count: 4
   # Number of consecutive augmentations in each sub-policy. Faster AutoAugment will sequentially apply `operation_count`
   # augmentations from a sub-policy to an image. Larger values of `operation_count` lead to better performance of
   # a model trained on augmented images. Simultaneously, larger values of `operation_count` affect the speed of search
   # and increase the searching time.
-  operation_count: 4
 
-# Settings for Semantic Segmentation Model that is used for two purposes:
-# 1. As a model that performs semantic segmentation of input images.
-# 2. As a Discriminator for Policy Model.
 semantic_segmentation_model:
+  # Settings for Semantic Segmentation Model that is used for two purposes:
+  # 1. As a model that performs semantic segmentation of input images.
+  # 2. As a Discriminator for Policy Model.
+
+  _target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
   # By default, AutoAlbument uses an instance of `autoalbument.faster_autoaugment.models.SemanticSegmentationModel` as
   # a semantic segmentation model.
   # This model takes four parameters: `num_classes`, `architecture`, `encoder_architecture` and `pretrained`.
-  _target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
 
+  num_classes: 21
   # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
   # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.
-  num_classes: 21
 
+  architecture: DeepLabV3Plus
   # The architecture of Semantic Segmentation Model. AutoAlbument uses models from
   # https://github.com/qubvel/segmentation_models.pytorch. Please refer to its documentation to get a list of available
   # models - https://github.com/qubvel/segmentation_models.pytorch#models-.
-  architecture: DeepLabV3Plus
 
+  encoder_architecture: resnet50
   # The architecture of encoder in Semantic Segmentation Model. Please refer to Segmentation Models' documentation to
   # get a list of available encoders - https://github.com/qubvel/segmentation_models.pytorch#encoders-
-  encoder_architecture: resnet50
 
+  pretrained: true
   # Either boolean flag or string with that indicates whether the selected encoder architecture should load pretrained
   # weights or use randomly initialized weights.
   # - In the case of boolean flag `true` means using pretrained weights from ImageNet and `false` means using randomly
   #   initialized weights.
   # - In the case of string the value should specify the name of the weights. For the list of available weights please
   #   refer to https://github.com/qubvel/segmentation_models.pytorch#encoders-
-  pretrained: True
 
 data:
+  dataset:
+    _target_: dataset.PascalVOCSearchDataset
+    root: ~/data/pascal_voc
+    image_set: train
+    download: false
   # Class for the PyTorch Dataset and arguments to it. AutoAlbument will create an object of this class using
   # the `instantiate` method from Hydra - https://hydra.cc/docs/next/patterns/instantiate_objects/overview/.
   #
@@ -91,19 +103,22 @@ data:
   # - Example of an absolute path:
   # dataset_file: /projects/pytorch/dataset.py
   #
-  dataset:
-    _target_: dataset.PascalVOCSearchDataset
-    root: "~/data/pascal_voc"
-    image_set: "train"
-    download: False
 
+  input_dtype: uint8
   # The data type of input images. Two values are supported:
   # - uint8. In that case, all input images should be NumPy arrays with the np.uint8 data type and values in the range
   #   [0, 255].
   # - float32. In that case, all input images should be NumPy arrays with the np.float32 data type and values in the
   #   range [0.0, 1.0].
-  input_dtype: uint8
 
+  preprocessing:
+  - LongestMaxSize:
+      max_size: 256
+  - PadIfNeeded:
+      min_height: 256
+      min_width: 256
+      border_mode: 0
+      value: [0, 0, 0]
   # A list of preprocessing augmentations that will be applied to each image before applying augmentations from
   # a policy. A preprocessing augmentation should be defined as `key`: `value`, where `key` is the name of augmentation
   # from Albumentations, and `value` is a dictionary with augmentation parameters. The found policy will also apply
@@ -123,74 +138,63 @@ data:
   #        height: 224
   #        width: 224
   #
-  preprocessing:
-    - LongestMaxSize:
-        max_size: 256
-    - PadIfNeeded:
-        min_height: 256
-        min_width: 256
-        border_mode: 0
-        value: [0, 0, 0]
 
+  normalization:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
   # Normalization values for images. For each image, the search pipeline will subtract `mean` and divide by `std`.
   # Normalization is applied after transforms defined in `preprocessing`. Note that regardless of `input_dtype`,
   # the normalization function will always receive a `float32` input with values in the range [0.0, 1.0], so you should
   # define `mean` and `std` values accordingly. ImageNet normalization is used by default.
-  normalization:
-    mean: [0.485, 0.456, 0.406]
-    std: [0.229, 0.224, 0.225]
 
-  # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
-  # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
   dataloader:
     _target_: torch.utils.data.DataLoader
     batch_size: 32
-    shuffle: True
+    shuffle: true
     num_workers: 8
-    pin_memory: True
-    drop_last: True
+    pin_memory: true
+    drop_last: true
+  # Parameters for the PyTorch DataLoader. Please refer to the PyTorch documentation for the description of parameters -
+  # https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
+
 
 optim:
-  # Number of epochs to search parameters of augmentations.
-  epochs: 50
-
-  # Optimizer configuration for Semantic Segmentation Model
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
+  # Optimizer configuration for the main (either Classification or Semantic Segmentation) Model
 
-  # Optimizer configuration for Policy Model
   policy:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
+  # Optimizer configuration for Policy Model
 
-# Device that will keep PyTorch Tensors and which will be used for training. Please refer to the PyTorch documentation
-# for more information -  https://pytorch.org/docs/stable/tensor_attributes.html#torch.torch.device.
-device: cuda
 
-# Value for torch.backends.cudnn.benchmark
-# https://pytorch.org/docs/stable/notes/randomness.html#cuda-convolution-benchmarking
-cudnn_benchmark: True
+seed: 42 # Random seed. If the value is not null, it will be passed to `seed_everything` -
+# https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.utilities.seed.html?highlight=seed_everything
 
-# If set to `True` AutoAlbument will save a checkpoint that contains states of models and optimizers at the end of each
-# epoch. Checkpoints will be saved to the directory `<working directory>/checkpoints`.
-save_checkpoints: False
-
-# Path to a PyTorch checkpoint that contains saved states of models and optimizers. The value should be an absolute path
-# to a file. If set, AutoAlbument will resume the searching process with data from the checkpoint.
-checkpoint_path: null
-
-# Path to a directory in which AutoAlbument will save TensorBoard logs. Set the value to `null` if you want to disable
-# this feature.
-tensorboard_logs_dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}/tensorboard_logs
-
-seed: 42
 
 hydra:
   run:
+    dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
     # Path to the directory that will contain all outputs produced by the search algorithm. `${config_dir:}` contains
     # path to the directory with the `search.yaml` config file. Please refer to the Hydra documentation for more
     # information - https://hydra.cc/docs/configure_hydra/workdir.
-    dir: ${config_dir:}/outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+
+
+trainer:
+  # Configuration for PyTorch Lightning Trainer. You can read more about Trainer and its arguments at
+  # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html.
+  max_epochs: 50
+  # Number of epochs to search for augmentation parameters.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#max-epochs
+
+  benchmark: true
+  # If true enables cudnn.benchmark.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#benchmark
+
+  gpus: 1
+  # Number of GPUs to train on. Set to `0` or None` to use CPU for training.
+  # More detailed description - https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#gpus

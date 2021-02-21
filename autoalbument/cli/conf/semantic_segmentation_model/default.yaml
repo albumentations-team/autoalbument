@@ -1,22 +1,30 @@
 # @package _group_
 
+# Settings for Semantic Segmentation Model that is used for two purposes:
+# 1. As a model that performs semantic segmentation of input images.
+# 2. As a Discriminator for Policy Model.
+
+_target_: autoalbument.faster_autoaugment.models.SemanticSegmentationModel
+# Python class for instantiating Classification Model. You can read more about overriding this value
+# to use a custom model at https://albumentations.ai/docs/autoalbument/custom_model/
+
+num_classes: _MISSING_
 # The number of classes in the dataset. The dataset implementation should return a mask as a NumPy array with
 # the shape [height, width, num_classes]. In a case of binary segmentation you can set `num_classes` to 1.
-num_classes: 21
 
+architecture: Unet
 # The architecture of Semantic Segmentation Model. AutoAlbument uses models from
 # https://github.com/qubvel/segmentation_models.pytorch. Please refer to its documentation to get a list of available
 # models - https://github.com/qubvel/segmentation_models.pytorch#models-.
-architecture: Unet
 
+encoder_architecture: resnet18
 # The architecture of encoder in Semantic Segmentation Model. Please refer to Segmentation Models' documentation to
 # get a list of available encoders - https://github.com/qubvel/segmentation_models.pytorch#encoders-
-encoder_architecture: se_resnext50_32x4d
 
+pretrained: True
 # Either boolean flag or string with that indicates whether the selected encoder architecture should load pretrained
 # weights or use randomly initialized weights.
 # - In the case of boolean flag `true` means using pretrained weights from ImageNet and `false` means using randomly
 #   initialized weights.
 # - In the case of string the value should specify the name of the weights. For the list of available weights please
 #   refer to https://github.com/qubvel/segmentation_models.pytorch#encoders-
-pretrained: True

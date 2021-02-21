@@ -1,0 +1,4 @@
+# @package _global_
+
+seed: 42 # Random seed. If the value is not null, it will be passed to `seed_everything` -
+# https://pytorch-lightning.readthedocs.io/en/stable/api/pytorch_lightning.utilities.seed.html?highlight=seed_everything

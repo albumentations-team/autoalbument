@@ -10,7 +10,7 @@ classification_model:
   _target_: autoalbument.faster_autoaugment.models.ClassificationModel
   num_classes: 10
   architecture: resnet18
-  pretrained: False
+  pretrained: false
 
 data:
   dataset:
@@ -24,7 +24,6 @@ data:
     num_workers: 0
 
 optim:
-  epochs:  1
   main:
     _target_: torch.optim.Adam
     lr: 1e-3
@@ -33,11 +32,12 @@ optim:
     _target_: torch.optim.Adam
     lr: 1e-3
     betas: [0, 0.999]
-
-device: cpu
-
 seed: 42
 
 hydra:
   run:
     dir: ${config_dir:}/outputs
+trainer:
+  max_epochs: 1
+  gpus: 0
+_version: 2

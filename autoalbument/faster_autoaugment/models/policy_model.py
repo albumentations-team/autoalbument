@@ -14,22 +14,10 @@ from albumentations.core.composition import Compose, OneOf
 from albumentations.pytorch import ToTensorV2
 from torch import Tensor, nn
 
-from autoalbument.faster_autoaugment.operations import (
-    CutoutFixedNumberOfHoles,
-    CutoutFixedSize,
-    HorizontalFlip,
-    RandomBrightness,
-    RandomContrast,
-    Rotate,
-    Scale,
-    ShiftRGB,
-    ShiftX,
-    ShiftY,
-    Solarize,
-    VerticalFlip,
+from autoalbument.faster_autoaugment.utils import (
+    MAX_VALUES_BY_INPUT_DTYPE,
+    target_requires_grad,
 )
-from autoalbument.faster_autoaugment.utils import MAX_VALUES_BY_INPUT_DTYPE, target_requires_grad
-
 
 PROBABILITY_EPS = 0.01
 
@@ -160,26 +148,8 @@ class Policy(nn.Module):
         return input.mul_(self._std[:, None, None]).add_(self._mean[:, None, None])
 
     @staticmethod
-    def dda_operations(temperature):
-        return [
-            ShiftRGB(shift_r=True, temperature=temperature),
-            ShiftRGB(shift_g=True, temperature=temperature),
-            ShiftRGB(shift_b=True, temperature=temperature),
-            RandomBrightness(temperature=temperature),
-            RandomContrast(temperature=temperature),
-            Solarize(temperature=temperature),
-            HorizontalFlip(temperature=temperature),
-            VerticalFlip(temperature=temperature),
-            Rotate(temperature=temperature),
-            ShiftX(temperature=temperature),
-            ShiftY(temperature=temperature),
-            Scale(temperature=temperature),
-            CutoutFixedNumberOfHoles(temperature=temperature),
-            CutoutFixedSize(temperature=temperature),
-        ]
-
-    @staticmethod
     def faster_auto_augment_policy(
+        operations,
         num_sub_policies: int,
         temperature: float,
         operation_count: int,
@@ -188,7 +158,7 @@ class Policy(nn.Module):
         std: torch.Tensor,
     ):
         return Policy(
-            nn.ModuleList(Policy.dda_operations(temperature)),
+            nn.ModuleList(operations),
             num_sub_policies,
             temperature,
             operation_count,
