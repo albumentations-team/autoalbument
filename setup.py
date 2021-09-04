@@ -32,8 +32,8 @@ setup(
         "pytorch-lightning>=1.1.8,<1.2",
         "torch>=1.6.0",
         "hydra-core>=1.0",
-        "timm==0.3.2",  # This version is required for segmentation-models-pytorch
-        "segmentation-models-pytorch>=0.1.3",
+        "timm>=0.4.12",  # This version is required for segmentation-models-pytorch
+        "segmentation-models-pytorch>=0.2.0",
         "tqdm",
         "click",
         "colorama",
